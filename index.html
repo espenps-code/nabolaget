@@ -238,7 +238,7 @@ footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;f
 <body>
 <header class="top" id="top"></header>
 <main id="main"><p class="muted">Laster …</p></main>
-<footer>Inspirert av Jet Lag: The Game. Kartdata © OpenStreetMap-bidragsytere (ODbL), kartfliser © CARTO.</footer>
+<footer>Inspirert av Jet Lag: The Game. Kartdata og kartfliser © OpenStreetMap-bidragsytere (ODbL).</footer>
 <div class="toast" id="toast" hidden></div>
 <input type="file" id="s-files" accept="image/*" multiple hidden>
 
@@ -1197,8 +1197,8 @@ async function sendItem(it){
 
 /* ---------- Leaflet maps ---------- */
 const MAPS = {};
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere © <a href="https://carto.com/attributions">CARTO</a>';
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere';
 function ensureMap(k){
   if (MAPS[k]) return MAPS[k];
   const el = document.createElement('div'); el.className = 'lmap'; el.style.position = 'absolute';
@@ -1206,7 +1206,7 @@ function ensureMap(k){
   MAPS[k] = M;
   if (!window.L){ el.innerHTML = '<div class="empty">Kartet kunne ikke lastes.</div>'; return M; }
   M.map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:true, zoomSnap:0.25});
-  L.tileLayer(TILE_URL, {maxZoom:19, subdomains:'abcd', attribution:TILE_ATTR}).addTo(M.map);
+  L.tileLayer(TILE_URL, {maxZoom:19, attribution:TILE_ATTR}).addTo(M.map);
   M.layer = L.layerGroup().addTo(M.map);
   if (k==='wiz'){
     M.map.setView([60.47, 8.47], 5);
