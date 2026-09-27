@@ -7,7 +7,11 @@ Nettsiden er statisk (GitHub Pages) og bruker Firebase Realtime Database til å 
 ## Slik spilles det
 
 1. **Løp.** Læreren viser kartet og starter klokka. Gruppene fotograferer gatenavnskilt innenfor sirkelen.
-2. **Last opp.** Hver gruppe logger inn med spillkoden og sin egen firesifrede gruppekode, og laster opp bildene. Tekstleseren (Tesseract, som kjører på iPaden) prøver å kjenne igjen gatenavnet. Gater den kjenner igjen, teller med en gang. Resten godkjenner eller avviser læreren.
+2. **Last opp.** Hver gruppe logger inn med spillkoden og sin egen firesifrede gruppekode, og laster opp bildene. Tekstleseren (Tesseract, som kjører på iPaden) prøver å kjenne igjen gatenavnet. Appen leser også når bildet ble tatt, fra metadataene i bildefilen (EXIF), og sammenligner med tidspunktet klokka ble startet og fristen.
+   - Riktig gate og tatt i løpet: teller med en gang, og bildet lagres ikke.
+   - Tatt før start eller etter fristen: teller ikke, og bildet lagres ikke. Læreren kan godkjenne likevel.
+   - Usikker gate eller ukjent tidspunkt: bildet lagres til læreren har godkjent eller avvist det, og slettes da automatisk.
+   - Fristen er slutten av klokka. Læreren kan også sette et eget klokkeslett. Det er en toleranse på ett minutt.
 3. **Poeng.** Opplastingen stenger. Gater bare én gruppe har, er erobret. Poengene er gatas lengde i meter innenfor sirkelen.
 4. **Duell.** Portalen trekker en enkel øvelse for hver gate flere grupper har funnet. Læreren trykker på vinneren, og gata skifter farge på kartet.
 
@@ -38,7 +42,8 @@ Verdiene i `firebase-config.js` er ikke hemmelige. Det er databasereglene som be
 - Bare den som har lærerlenken, kan endre spillet, se gruppekodene og se alle bildene.
 - En elev kan bare laste opp til sin egen gruppe, og bare med riktig gruppekode. Bildene til andre grupper kan de ikke se.
 - Etter fase 2 kan ingen elever laste opp mer.
-- Bildene lagres nedskalert, cirka 50–100 kB hver. Læreren kan slette alle bildene, eller hele spillet, under **Oppsett → Rydd opp**.
+- Bare bilder som læreren må se på, lagres. De skaleres ned til cirka 50–100 kB og slettes automatisk når læreren har godkjent eller avvist dem. Metadata i bildefilen, som GPS-posisjon, fjernes før opplasting. Læreren kan slette alt som er igjen, eller hele spillet, under **Oppsett → Rydd opp**.
+- Tidskontrollen skjer på elevens enhet. En elev som er god med data, kan i teorien jukse med den. Den er ment som en hjelp, ikke som bevis.
 - Si til elevene at de skal ta bilde av skiltet og ikke av folk. Skolen bør vurdere om Firebase (Google, datalagring i EU) er i tråd med skolens rutiner for personvern.
 
 ## Grenser i gratisplanen (Spark)
@@ -49,7 +54,7 @@ Realtime Database gir 1 GB lagring og 10 GB nedlasting per måned. Ett spill med
 
 - Én fil: `index.html`. Leaflet, qrcode-generator, Firebase (compat 10.12.2) og Tesseract.js lastes fra CDN.
 - Gater: Overpass API (`highway` med `name` innenfor 2,1 km). Gangveger av typen `footway`, tunneler og navn på bruer tas ikke med. Gatene klippes mot sirkelen, og lengden regnes bare for delen som ligger innenfor.
-- Kart: CARTO Voyager-fliser. © OpenStreetMap-bidragsytere (ODbL), © CARTO.
+- Kart: OpenStreetMap-fliser (tile.openstreetmap.org). © OpenStreetMap-bidragsytere (ODbL). Følg OSMs retningslinjer for flisbruk ved stor trafikk.
 - Datamodell: `games/{kode}/meta | groups | streets | claims/{gruppe}/{id} | imgs/{gruppe}/{id} | verdicts | duels | secret | teachers | members`.
 
 ### Testing lokalt med Firebase-emulator
