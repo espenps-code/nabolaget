@@ -399,7 +399,42 @@ function claimStatus(gid, pid, c){
   const v = ST.verdicts?.[gid]?.[pid];
   if (v === true) return 'ok';
   if (v === false) return 'rejected';
+  if (c.late) return 'late';
   return c.v ? 'ok' : 'pending';
+}
+/* ---------- photo time window ---------- */
+const GRACE = 60000;
+function timeWindow(){ const m = ST.meta || {}, t = m.timer || {}; return {start: m.startedAt || null, end: m.deadlineAt || (t.running && t.end ? t.end : null)}; }
+function timeCheck(ts){ const {start, end} = timeWindow(); if (!start && !end) return 'nocheck'; if (!ts) return 'unknown'; if (end && ts > end + GRACE) return 'late'; if (start && ts < start - GRACE) return 'early'; return 'ok'; }
+const hhmm = ts => new Date(ts).toLocaleTimeString('nb-NO', {hour:'2-digit', minute:'2-digit'});
+const dayTime = ts => { const d = new Date(ts), today = new Date(); return d.toDateString()===today.toDateString() ? 'kl. ' + hhmm(ts) : d.toLocaleDateString('nb-NO') + ' kl. ' + hhmm(ts); };
+async function exifTakenAt(file){
+  try {
+    const buf = await file.slice(0, 262144).arrayBuffer(), v = new DataView(buf);
+    if (v.byteLength < 12 || v.getUint16(0) !== 0xFFD8) return null;
+    const str = (o, n) => { let r=''; for (let i=0;i<n && o+i<v.byteLength;i++){ const c=v.getUint8(o+i); if (!c) break; r+=String.fromCharCode(c); } return r; };
+    let o = 2;
+    while (o + 4 < v.byteLength){
+      const mk = v.getUint16(o), len = v.getUint16(o+2);
+      if ((mk & 0xFF00) !== 0xFF00) break;
+      if (mk === 0xFFE1 && str(o+4, 4) === 'Exif'){
+        const t = o + 10, le = v.getUint16(t) === 0x4949;
+        const u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+        const readIfd = off => { const out = {}; if (off + 2 > v.byteLength) return out; const n = u16(off); for (let i=0;i<n;i++){ const e = off + 2 + i*12; if (e + 12 > v.byteLength) break; const tag = u16(e), type = u16(e+2), cnt = u32(e+4); out[tag] = {type, cnt, p: (type===2 && cnt>4) ? t + u32(e+8) : e+8, raw: u32(e+8)}; } return out; };
+        const ifd0 = readIfd(t + u32(t+4));
+        const exif = ifd0[0x8769] ? readIfd(t + ifd0[0x8769].raw) : {};
+        const dt = exif[0x9003] || exif[0x9004] || ifd0[0x0132];
+        if (!dt) return null;
+        const ds = str(dt.p, 19), off = exif[0x9011] || exif[0x9010] || exif[0x9012];
+        const mm = ds.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$/); if (!mm) return null;
+        const offs = off ? str(off.p, 6) : '';
+        if (/^[+-]\d{2}:\d{2}$/.test(offs)) return Date.parse(`${mm[1]}-${mm[2]}-${mm[3]}T${mm[4]}:${mm[5]}:${mm[6]}${offs}`);
+        return new Date(+mm[1], +mm[2]-1, +mm[3], +mm[4], +mm[5], +mm[6]).getTime();
+      }
+      o += 2 + len;
+    }
+  } catch(e){ console.warn('exif', e); }
+  return null;
 }
 function derive(){
   const gs = groupsSorted(), gids = new Set(gs.map(g=>g.id));
@@ -411,7 +446,7 @@ function derive(){
       const st = claimStatus(gid, pid, c);
       if (!c.m) per[gid].photos++;
       if (st==='pending') per[gid].pending++;
-      if (st==='rejected') per[gid].rejected++;
+      if (st==='rejected' || st==='late') per[gid].rejected++;
       if (st!=='ok') continue;
       for (const n of Object.values(c.s||{})){
         if (!ST.sIdx.has(n)) continue;
@@ -803,7 +838,7 @@ function tSetup(D){
   </div>
   <div class="card stack">
     <h3>Rydd opp</h3>
-    <p class="small muted">Bildene ligger lagret til du sletter dem. Slett bildene når spillet er ferdig. Stillingen og gatene beholdes.</p>
+    <p class="small muted">Bare bilder som må sjekkes, blir lagret. De slettes automatisk når du godkjenner eller avviser dem. Her kan du slette resten for godt. Stillingen og gatene beholdes.</p>
     ${ST.confirm==='imgs' ? `<div class="confirm"><span>Slette alle bildene for godt?</span><button class="btn small danger" data-act="del-imgs-yes">Ja, slett bildene</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div class="row"><button class="btn danger" data-act="confirm" data-c="imgs">Slett alle bildene</button></div>`}
     ${ST.confirm==='game' ? `<div class="confirm"><span>Slette hele spillet med bilder, poeng og gruppekoder?</span><button class="btn small danger" data-act="del-game-yes">Ja, slett spillet</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div class="row"><button class="btn danger" data-act="confirm" data-c="game">Slett hele spillet</button></div>`}
   </div>`;
@@ -819,6 +854,18 @@ function rulesHtml(){
     <li>Vær tilbake ved start før tiden er ute.</li>
   </ul>`;
 }
+function timeWindowHtml(){
+  const {start, end} = timeWindow(), m = ST.meta || {};
+  const dl = m.deadlineAt ? new Date(m.deadlineAt) : null;
+  const dlVal = dl ? String(dl.getHours()).padStart(2,'0') + ':' + String(dl.getMinutes()).padStart(2,'0') : '';
+  const txt = (!start && !end) ? 'Start klokka, så sjekkes det når bildene er tatt. Bilder tatt før start eller etter fristen teller ikke.'
+    : `Bilder må være tatt ${start ? 'etter kl. ' + hhmm(start) : ''}${start && end ? ' og ' : ''}${end ? 'før kl. ' + hhmm(end) : ''}. Andre bilder teller ikke. Bilder uten tidspunkt sjekker du selv.`;
+  return `<div class="stack" style="gap:6px;width:100%">
+    <div class="label">Tidsfrist for bildene</div>
+    <p class="small">${txt}</p>
+    <label class="row small" for="t-deadline" style="gap:8px">Egen frist <input type="time" id="t-deadline" value="${dlVal}" style="border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:6px 8px">${m.deadlineAt ? '<button class="linkbtn" data-act="dl-clear">Bruk klokka</button>' : '<span class="muted">(ellers slutten av klokka)</span>'}</label>
+  </div>`;
+}
 function tRun(D){
   const T = timerState(), m = ST.meta;
   return `
@@ -832,6 +879,7 @@ function tRun(D){
         <button class="btn" data-act="t-reset">Nullstill</button>
         <label class="row small" for="t-min" style="gap:6px">Minutter <select id="t-min">${[10,15,20,25,30,40,45,60].map(x=>`<option ${x===(m.minutes||25)?'selected':''}>${x}</option>`).join('')}</select></label>
       </div>
+      ${timeWindowHtml()}
       <div class="label">Regler ute</div>
       ${rulesHtml()}
     </div>
@@ -846,19 +894,22 @@ function claimCard(gid, pid, c, opts={}){
   const names = Object.values(c.s||{});
   const g = groupById(gid);
   const plates = names.map(n => `<span class="plate ${st==='rejected'?'off':''}">${esc(n)}</span>`).join(' ');
-  const badge = st==='ok' ? (ST.verdicts?.[gid]?.[pid]===true ? `<span class="pill good">Godkjent</span>` : `<span class="pill good">Lest automatisk</span>`) : st==='rejected' ? `<span class="pill bad">Avvist</span>` : `<span class="pill warn">Må sjekkes</span>`;
-  const imgHtml = c.m ? `<div class="noimg">Lagt inn av læreren</div>` : img===undefined ? `<div class="noimg"><span class="spin"></span></div>` : img===null ? `<div class="noimg">Bildet er slettet</div>` : `<img src="${esc(img)}" alt="Bilde fra ${esc(g?.name||'gruppa')}" loading="lazy">`;
+  const badge = st==='ok' ? (ST.verdicts?.[gid]?.[pid]===true ? `<span class="pill good">Godkjent</span>` : `<span class="pill good">Lest automatisk</span>`) : st==='rejected' ? `<span class="pill bad">Avvist</span>` : st==='late' ? `<span class="pill bad">${c.late==='early'?'Tatt før start':'Tatt etter fristen'}</span>` : `<span class="pill warn">Må sjekkes</span>`;
+  const noImgText = c.m ? 'Lagt inn av læreren' : st==='pending' ? null : c.i ? 'Bildet er slettet etter at du gikk gjennom det' : st==='late' ? 'Tatt utenfor tiden. Bildet lagres ikke.' : 'Lest automatisk. Bildet lagres ikke.';
+  const imgHtml = noImgText ? `<div class="noimg">${noImgText}</div>` : img===undefined ? `<div class="noimg"><span class="spin"></span></div>` : img===null ? `<div class="noimg">Bildet er slettet</div>` : `<img src="${esc(img)}" alt="Bilde fra ${esc(g?.name||'gruppa')}" loading="lazy">`;
+  const when = c.m ? '' : c.tt ? `<p class="small ${st==='late'?'':'muted'}" style="${st==='late'?'color:var(--bad)':''}">Tatt ${esc(dayTime(c.tt))}</p>` : (c.tc==='unknown' ? `<p class="small" style="color:var(--warn)">Bildet har ikke noe tidspunkt. Sjekk at det er tatt i løpet.</p>` : '');
   return `<article class="photo ${st==='pending'?'flag':''}">
     <div class="img">${imgHtml}</div>
     <div class="body">
       <div class="row between">${opts.showGroup?teamChip(g):''}${badge}</div>
       <div class="found">${plates}</div>
+      ${when}
       ${c.o ? `<p class="small muted">Tekstleseren så: «${esc(String(c.o).replace(/\s+/g,' ').trim().slice(0,90))}»</p>` : (c.m ? '' : `<p class="small muted">Tekstleseren fant ingen tekst.</p>`)}
       ${isTeacher() ? `<div class="foot">
         <select data-fix="${gid}/${pid}" aria-label="Rett gate"><option value="">Rett gate …</option>${(ST.streets?.s||[]).map(s=>`<option>${esc(s.n)}</option>`).join('')}</select>
         <span class="row" style="gap:6px">
-          ${st!=='ok' || ST.verdicts?.[gid]?.[pid]!==true ? `<button class="btn small good" data-act="v-ok" data-k="${gid}/${pid}">Godkjenn</button>`:''}
-          ${st!=='rejected' ? `<button class="btn small danger" data-act="v-no" data-k="${gid}/${pid}">Avvis</button>`:''}
+          ${st!=='ok' || ST.verdicts?.[gid]?.[pid]!==true ? `<button class="btn small good" data-act="v-ok" data-k="${gid}/${pid}">${st==='late'?'Godkjenn likevel':'Godkjenn'}</button>`:''}
+          ${st!=='rejected' && st!=='late' ? `<button class="btn small danger" data-act="v-no" data-k="${gid}/${pid}">Avvis</button>`:''}
         </span></div>` : ''}
     </div>
   </article>`;
@@ -869,9 +920,9 @@ function tPhotos(D){
   for (const [gid, list] of Object.entries(ST.claims||{})) for (const [pid, c] of Object.entries(list||{})) if (groupById(gid)) all.push({gid, pid, c, st:claimStatus(gid,pid,c)});
   all.sort((a,b)=>(b.c.t||0)-(a.c.t||0));
   const shown = all.filter(x => f==='check' ? x.st==='pending' : f==='all' ? true : x.gid===f);
-  for (const x of shown) if (!x.c.m && ST.imgs[x.pid]===undefined) loadImg(x.gid, x.pid);
+  for (const x of shown) if (!x.c.m && x.st==='pending' && ST.imgs[x.pid]===undefined) loadImg(x.gid, x.pid);
   return `
-  <div class="intro"><h2>Fase 2 · Bildene</h2><p>Bildene kommer inn her mens gruppene laster opp. Når tekstleseren finner gatenavnet på skiltet, teller gata med en gang. De andre må du godkjenne eller avvise.</p></div>
+  <div class="intro"><h2>Fase 2 · Bildene</h2><p>Når tekstleseren finner gatenavnet og bildet er tatt i løpet, teller gata med en gang, og bildet lagres ikke. De andre må du godkjenne eller avvise, og bildet slettes så snart du har gjort det. Bilder tatt etter fristen teller ikke, men du kan godkjenne dem likevel.</p></div>
   <div class="gpick" role="group" aria-label="Filter">
     <button data-act="bf" data-f="check" aria-pressed="${f==='check'}" style="--c:var(--warn)"><i></i>Må sjekkes <span class="cnt">${D.pendingAll}</span></button>
     <button data-act="bf" data-f="all" aria-pressed="${f==='all'}"><i></i>Alle <span class="cnt">${all.length}</span></button>
@@ -983,12 +1034,12 @@ function viewStudent(D){
     body = `
     ${ph===1 ? `<div class="grid-2">${timerCard}<div class="card stack"><div class="label">Regler ute</div>${rulesHtml()}</div></div>
       <div class="card stack"><div class="row between"><h3>Her kan dere løpe</h3><span class="muted small">${ST.streets?`${ST.streets.s.length} gater innenfor sirkelen`:''}</span></div><div class="mapwrap"><div class="mapslot" data-map="area"></div></div></div>` : timerCard}
-    <div class="intro"><h2>Last opp bildene</h2><p>Velg bildene av gatenavnskiltene. Tekstleseren prøver å finne gatenavnet. Sjekk at riktig gate er valgt, og trykk «Send inn».</p></div>
+    <div class="intro"><h2>Last opp bildene</h2><p>Velg bildene av gatenavnskiltene. Tekstleseren prøver å finne gatenavnet. Sjekk at riktig gate er valgt, og trykk «Send inn». Bilder tatt før start eller etter fristen teller ikke.</p></div>
     <label class="upload-btn" for="s-files"><h3>Velg bilder</h3><span class="muted">Du kan velge mange på en gang</span></label>
     ${ST.local.length ? `<div class="row between"><b>${ST.local.filter(i=>i.status==='ready').length} klare til å sendes</b><span class="row">${ST.local.some(i=>i.status==='ready'&&i.sel)?`<button class="btn primary" data-act="s-send-all">Send inn alle som har gate</button>`:''}</span></div><div class="photos">${ST.local.map(localCard).join('')}</div>` : ''}
     <div class="card stack">
       <h3>${esc(g.name)} har ${streets.size} gate${streets.size===1?'':'r'}</h3>
-      ${mine.length ? `<div class="found">${mine.map(x=>`<span class="row" style="gap:4px">${Object.values(x.c.s||{}).map(n=>`<span class="plate ${x.st==='rejected'?'off':''}">${esc(n)}</span>`).join('')}${x.st==='pending'?'<span class="pill warn">Læreren sjekker</span>':x.st==='rejected'?'<span class="pill bad">Avvist</span>':''}</span>`).join('')}</div>` : `<p class="muted">Ingen gater sendt inn ennå.</p>`}
+      ${mine.length ? `<div class="found">${mine.map(x=>`<span class="row" style="gap:4px">${Object.values(x.c.s||{}).map(n=>`<span class="plate ${x.st==='rejected'?'off':''}">${esc(n)}</span>`).join('')}${x.st==='pending'?'<span class="pill warn">Læreren sjekker</span>':x.st==='rejected'?'<span class="pill bad">Avvist</span>':x.st==='late'?'<span class="pill bad">Tatt utenfor tiden</span>':''}</span>`).join('')}</div>` : `<p class="muted">Ingen gater sendt inn ennå.</p>`}
     </div>`;
   } else {
     body = `
@@ -1002,10 +1053,16 @@ function viewStudent(D){
 function localCard(it){
   const opts = (ST.streets?.s||[]).map(s=>`<option ${s.n===it.sel?'selected':''}>${esc(s.n)}</option>`).join('');
   let status = '';
-  if (it.status==='reading') status = `<span class="row small"><span class="spin"></span> ${esc(it.msg||'Leser skiltet …')}</span>`;
+  if (it.status==='reading') status += `<span class="row small"><span class="spin"></span> ${esc(it.msg||'Leser skiltet …')}</span>`;
   else if (it.status==='sending') status = `<span class="row small"><span class="spin"></span> Sender …</span>`;
   else if (it.status==='error') status = `<span class="pill bad">${esc(it.msg||'Noe gikk galt')}</span>`;
-  else if (it.status==='ready') status = it.match ? `<span class="pill good">Fant ${esc(it.match)}</span>` : `<span class="pill warn">Fant ikke navnet. Velg gata selv.</span>`;
+  if (it.status==='ready' || it.status==='error' || it.status==='reading'){
+    const tc = timeCheck(it.taken);
+    if (tc==='late') status += `<span class="pill bad">Tatt ${esc(hhmm(it.taken))}, etter fristen</span> `;
+    else if (tc==='early') status += `<span class="pill bad">Tatt før løpet startet</span> `;
+    else if (tc==='unknown') status += `<span class="pill warn">Ukjent tidspunkt</span> `;
+  }
+  if (it.status==='ready') status += it.match ? `<span class="pill good">Fant ${esc(it.match)}</span>` : `<span class="pill warn">Fant ikke navnet. Velg gata selv.</span>`;
   return `<article class="photo">
     <div class="img"><img src="${esc(it.url)}" alt="Bilde som skal sendes inn"></div>
     <div class="body">
@@ -1064,6 +1121,7 @@ async function handleFiles(files){
   const items = [];
   for (const f of files){
     const it = {id: 'l'+Math.random().toString(36).slice(2,9), status:'reading', msg:'Åpner bildet …', sel:'', match:null, ocr:'', url:''};
+    it.taken = await exifTakenAt(f);
     try { const {canvas, url} = await fileToCanvas(f, 1600); it.canvas = canvas; it.url = url; }
     catch(e){ it.status='error'; it.msg='Bildet kunne ikke åpnes. Bruk JPG eller PNG.'; }
     ST.local.push(it); items.push(it);
@@ -1105,17 +1163,25 @@ async function sendItem(it){
   const gid = ST.me?.gid;
   it.status='sending'; scheduleRender();
   try {
-    const c = it.canvas, s = Math.min(1, 900/Math.max(c.width, c.height));
-    const t = document.createElement('canvas'); t.width=Math.round(c.width*s); t.height=Math.round(c.height*s);
-    t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
-    let data = t.toDataURL('image/jpeg', 0.62);
-    if (data.length > 280000) data = t.toDataURL('image/jpeg', 0.4);
+    const tc = timeCheck(it.taken), late = (tc==='late' || tc==='early') ? (tc==='early' ? 'early' : 'late') : null;
+    const v = !late && !!(it.match && it.match===it.sel) && (tc==='ok' || tc==='nocheck');
+    const needsReview = !v && !late;
     const pid = gref('claims/'+gid).push().key;
-    await gref(`imgs/${gid}/${pid}`).set(data);
-    await gref(`claims/${gid}/${pid}`).set({s:[it.sel], v: !!(it.match && it.match===it.sel), o: it.ocr || '', t: firebase.database.ServerValue.TIMESTAMP});
-    const already = derive().per[gid].streets.has(it.sel);
+    if (needsReview){
+      const c = it.canvas, s = Math.min(1, 900/Math.max(c.width, c.height));
+      const t = document.createElement('canvas'); t.width=Math.round(c.width*s); t.height=Math.round(c.height*s);
+      t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+      let data = t.toDataURL('image/jpeg', 0.62);
+      if (data.length > 280000) data = t.toDataURL('image/jpeg', 0.4);
+      await gref(`imgs/${gid}/${pid}`).set(data);
+    }
+    const claim = {s:[it.sel], v, o: it.ocr || '', t: firebase.database.ServerValue.TIMESTAMP, tc};
+    if (it.taken) claim.tt = it.taken;
+    if (late) claim.late = late;
+    if (needsReview) claim.i = true;
+    await gref(`claims/${gid}/${pid}`).set(claim);
     ST.local = ST.local.filter(x=>x!==it); URL.revokeObjectURL(it.url);
-    toast(it.sel + ' er sendt inn.' + (already && it.match===it.sel ? '' : ''));
+    toast(late ? `${it.sel} er sendt inn, men bildet er tatt utenfor tiden og teller ikke.` : needsReview ? `${it.sel} er sendt inn. Læreren sjekker bildet.` : `${it.sel} er sendt inn og teller.`);
   } catch(e){
     console.warn(e); it.status='error'; it.msg = phase()>2 ? 'Opplastingen er stengt.' : 'Kunne ikke sende. Sjekk nettet og prøv igjen.';
   }
@@ -1223,6 +1289,9 @@ function afterRender(){
 }
 
 /* ---------- actions ---------- */
+function setVerdict(k, val){
+  return teacherWrite('verdicts/'+k, val).then(() => gref('imgs/'+k).remove()).then(() => { const pid = k.split('/')[1]; ST.imgs[pid] = null; scheduleRender(); }).catch(e => console.warn(e));
+}
 const teacherWrite = (path, val) => gref(path).set(val).catch(e => { console.warn(e); toast('Kunne ikke lagre: ' + (e.message||e)); });
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tab');
@@ -1251,12 +1320,13 @@ document.addEventListener('click', e => {
     case 'confirm-no': ST.confirm = null; scheduleRender(); break;
     case 'del-imgs-yes': ST.confirm=null; gref('imgs').remove().then(()=>{ ST.imgs={}; imgLoading.clear(); toast('Bildene er slettet.'); scheduleRender(); }).catch(err=>toast('Kunne ikke slette: '+err.message)); break;
     case 'del-game-yes': { const code = ST.code; ST.confirm=null; gref().remove().then(()=>{ ls('erobre-mine', (ls('erobre-mine')||[]).filter(m=>m.code!==code)); toast('Spillet er slettet.'); leaveGame(); }).catch(err=>toast('Kunne ikke slette: '+err.message)); break; }
-    case 't-start': { const T = timerState(); teacherWrite('meta/timer', {running:true, end: now() + T.left, left: T.left}); if (phase()!==1) {} break; }
+    case 't-start': { const T = timerState(); teacherWrite('meta/timer', {running:true, end: now() + T.left, left: T.left}); if (T.fresh || !ST.meta?.startedAt) teacherWrite('meta/startedAt', now()); break; }
     case 't-pause': { const T = timerState(); teacherWrite('meta/timer', {running:false, end:0, left: Math.max(1, T.left)}); break; }
-    case 't-reset': teacherWrite('meta/timer', {running:false, end:0, left:0}); break;
+    case 't-reset': teacherWrite('meta/timer', {running:false, end:0, left:0}); teacherWrite('meta/startedAt', null); break;
+    case 'dl-clear': teacherWrite('meta/deadlineAt', null); break;
     case 'bf': ST.bilderFilter = t.dataset.f; scheduleRender(); break;
-    case 'v-ok': teacherWrite('verdicts/'+t.dataset.k, true); break;
-    case 'v-no': teacherWrite('verdicts/'+t.dataset.k, false); break;
+    case 'v-ok': setVerdict(t.dataset.k, true); break;
+    case 'v-no': setVerdict(t.dataset.k, false); break;
     case 'd-win': teacherWrite('duels/'+slug(t.dataset.n), {street:t.dataset.n, winner:t.dataset.g, challenge:t.dataset.ch, at: firebase.database.ServerValue.TIMESTAMP}).then(()=>toast(`${t.dataset.n} er erobret av ${groupById(t.dataset.g)?.name||''}.`)); break;
     case 'd-undo': teacherWrite('duels/'+slug(t.dataset.n)+'/winner', null); break;
     case 'd-new': { const n=t.dataset.n, D=derive(), c=D.contested.find(x=>x.n===n); if (!c) break; const off=offSet(); const pool=CHALLENGES.filter(x=>!off[x.id]&&(c.gs.length<=2||x.multi)&&x.id!==t.dataset.cur); if (!pool.length) break; teacherWrite('duels/'+slug(n)+'/challenge', pool[Math.floor(Math.random()*pool.length)].id); teacherWrite('duels/'+slug(n)+'/street', n); break; }
@@ -1275,9 +1345,10 @@ document.addEventListener('change', e => {
   if (t.id==='w-radius'){ ST.wiz.radius = +t.value; ST.wiz._cache=null; scheduleRender(); return; }
   if (t.classList.contains('t-gname')){ const v = t.value.trim().slice(0,24); if (v) teacherWrite(`groups/${t.dataset.g}/name`, v); return; }
   if (t.dataset.chal){ teacherWrite('meta/off/'+t.dataset.chal, t.checked ? null : true); return; }
+  if (t.id==='t-deadline'){ const [hh, mi] = String(t.value||'').split(':').map(Number); if (isNaN(hh)) { teacherWrite('meta/deadlineAt', null); return; } const d = new Date(); d.setHours(hh, mi||0, 0, 0); teacherWrite('meta/deadlineAt', d.getTime()); return; }
   if (t.id==='t-min'){ teacherWrite('meta/minutes', +t.value); if (!timerState().running) teacherWrite('meta/timer', {running:false,end:0,left:0}); return; }
   if (t.dataset.adj){ const v = parseInt(String(t.value).replace(/[−–]/g,'-').replace(/[^\d-]/g,''),10); teacherWrite('meta/adjust/'+t.dataset.adj, isNaN(v)||!v ? null : v); return; }
-  if (t.dataset.fix){ const n = t.value; if (!n) return; const [gid,pid] = t.dataset.fix.split('/'); teacherWrite(`claims/${gid}/${pid}/s`, [n]); teacherWrite(`verdicts/${gid}/${pid}`, true); return; }
+  if (t.dataset.fix){ const n = t.value; if (!n) return; const [gid,pid] = t.dataset.fix.split('/'); teacherWrite(`claims/${gid}/${pid}/s`, [n]).then(()=>setVerdict(`${gid}/${pid}`, true)); return; }
   if (t.id==='t-manual'){ const n = t.value; if (!n) return; const gid = t.dataset.g; const pid = gref('claims/'+gid).push().key; teacherWrite(`claims/${gid}/${pid}`, {s:[n], v:true, m:true, o:'', t:firebase.database.ServerValue.TIMESTAMP}); toast(n+' er lagt til.'); return; }
   if (t.dataset.sel){ const it = ST.local.find(x=>x.id===t.dataset.sel); if (it){ it.sel = t.value; scheduleRender(); } return; }
   if (t.id==='labels'){ ST.labels = t.checked; scheduleRender(); return; }
