@@ -285,9 +285,9 @@ footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;f
    Erobre nabolaget · statisk nettside (GitHub Pages + Firebase)
    ========================================================= */
 const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-const FETCH_R = 2100;         // m, radius for street download
+const FETCH_MARGIN = 150;     // m extra around the chosen radius when downloading streets
 const MIN_LEN = 15;           // m inside the area before a street counts
 const EMU = new URLSearchParams(location.search).has('emu');
 
@@ -687,7 +687,7 @@ function viewCreate(){
           <span class="row between"><span class="label">Radius</span><b class="num" id="w-rlabel">${W.radius.toLocaleString('nb-NO')} m</b></span>
           <input type="range" id="w-radius" min="300" max="2000" step="100" value="${W.radius}">
         </label>
-        ${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap …</p>` : ''}
+        ${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap … <span class="muted" data-elapsed>${Math.round((Date.now()-(W.fetchStart||Date.now()))/1000)} s</span></p>` : ''}
         ${W.err ? `<p class="small" style="color:var(--bad)">${esc(W.err)} <button class="linkbtn" data-act="w-refetch">Prøv igjen</button></p>` : ''}
         ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}
       </div>
@@ -697,7 +697,7 @@ function viewCreate(){
         ${W.names.slice(0,W.count).map((n,i)=>`<div class="row" style="flex-wrap:nowrap"><span class="team" style="--c:${COLORS[i].c}"><i></i></span><input type="text" id="w-g${i}" data-i="${i}" class="w-gname" value="${esc(n)}" maxlength="24" aria-label="Navn på gruppe ${i+1}"></div>`).join('')}
       </div>
       <div class="row">
-        <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating)?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
+        <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating && !W.fetching && W.radius <= (W.fetchedR||0))?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
         <button class="btn" data-act="w-cancel">Avbryt</button>
       </div>
     </div>
@@ -716,31 +716,54 @@ async function wizSearch(q){
 }
 async function wizSetCenter(lat, lon, place){
   const W = ST.wiz;
-  W.center = {lat:+lat.toFixed(6), lon:+lon.toFixed(6)}; W.place = place || 'valgt punkt'; W.raw = null; W._cache = null; W.err='';
-  W.fetching = true; scheduleRender();
-  const my = W.center;
+  W.center = {lat:+lat.toFixed(6), lon:+lon.toFixed(6)}; W.place = place || 'valgt punkt';
+  W.raw = null; W.fetchedR = 0; W._cache = null; W.err = '';
+  return wizFetch();
+}
+let wizFetchTimer = null;
+function wizMaybeRefetch(){
+  const W = ST.wiz; if (!W || !W.center || W.fetching) return;
+  if (W.radius <= (W.fetchedR||0)) return;
+  clearTimeout(wizFetchTimer); wizFetchTimer = setTimeout(wizFetch, 500);
+}
+async function wizFetch(){
+  const W = ST.wiz; if (!W || !W.center) return;
+  const my = W.center, R = W.radius + FETCH_MARGIN;
+  W.fetching = true; W.err = ''; W.fetchStart = Date.now(); scheduleRender();
   try {
-    const els = await fetchStreets(my.lat, my.lon);
+    const els = await fetchStreets(my.lat, my.lon, R);
     if (ST.wiz !== W || W.center !== my) return;
     const P = projector(my.lat, my.lon);
-    W.raw = els;
-    for (const w of W.raw) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
-  } catch(e){ if (ST.wiz===W) W.err = 'Kunne ikke hente gater akkurat nå.'; }
-  if (ST.wiz===W && W.center===my){ W.fetching = false; W._cache=null; scheduleRender(); }
+    for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
+    W.raw = els; W.fetchedR = R; W._cache = null;
+  } catch(e){ if (ST.wiz===W && W.center===my) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
+  if (ST.wiz===W && W.center===my){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
 }
-async function fetchStreets(lat, lon){
-  const q = `[out:json][timeout:60];way["highway"]["name"](around:${FETCH_R},${lat},${lon});out geom tags;`;
+async function fetchStreets(lat, lon, R){
+  const dLat = R/110540, dLon = R/(111320*Math.cos(lat*Math.PI/180));
+  const bb = [lat-dLat, lon-dLon, lat+dLat, lon+dLon].map(x=>x.toFixed(6)).join(',');
+  const types = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|cycleway|path';
+  const q = `[out:json][timeout:25];way["highway"~"^(${types})$"]["name"]["tunnel"!="yes"](around:${Math.round(R)},${lat},${lon});out geom(${bb});`;
   let lastErr;
   for (const url of OVERPASS){
+    const ac = new AbortController(), to = setTimeout(()=>ac.abort(), 30000);
     try {
-      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
       if (!r.ok) throw new Error('HTTP '+r.status);
       const js = await r.json();
-      const skip = new Set(['footway','steps','platform','corridor','proposed','construction','bus_stop','elevator','raceway','abandoned','disused']);
-      return js.elements.filter(e => e.type==='way' && e.geometry && e.geometry.length>1 && e.tags && e.tags.name
-          && !skip.has(e.tags.highway) && e.tags.tunnel!=='yes' && !/tunnel(en)?$|\sbru$/i.test(e.tags.name))
-        .map(e => ({n: e.tags.name.trim(), ll: e.geometry.map(p => [p.lat, p.lon])}));
-    } catch(e){ lastErr = e; }
+      clearTimeout(to);
+      const out = [];
+      for (const e of js.elements){
+        if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
+        let cur = [];
+        for (const p of e.geometry){
+          if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
+          else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
+        }
+        if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
+      }
+      return out;
+    } catch(e){ clearTimeout(to); lastErr = e; }
   }
   throw lastErr || new Error('Overpass');
 }
@@ -944,7 +967,7 @@ function claimCard(gid, pid, c, opts={}){
       ${when}
       ${c.o ? `<p class="small muted">Tekstleseren så: «${esc(String(c.o).replace(/\s+/g,' ').trim().slice(0,90))}»</p>` : (c.m ? '' : `<p class="small muted">Tekstleseren fant ingen tekst.</p>`)}
       ${isTeacher() ? `<div class="foot">
-        <select data-fix="${gid}/${pid}" aria-label="Rett gate"><option value="">Rett gate …</option>${(ST.streets?.s||[]).map(s=>`<option>${esc(s.n)}</option>`).join('')}</select>
+        <select data-fix="${gid}/${pid}" data-lazy="all" aria-label="Rett gate"><option value="">Rett gate …</option></select>
         <span class="row" style="gap:6px">
           ${st!=='ok' || ST.verdicts?.[gid]?.[pid]!==true ? `<button class="btn small good" data-act="v-ok" data-k="${gid}/${pid}">${st==='late'?'Godkjenn likevel':'Godkjenn'}</button>`:''}
           ${st!=='rejected' && st!=='late' ? `<button class="btn small danger" data-act="v-no" data-k="${gid}/${pid}">Avvis</button>`:''}
@@ -966,7 +989,7 @@ function tPhotos(D){
     <button data-act="bf" data-f="all" aria-pressed="${f==='all'}"><i></i>Alle <span class="cnt">${all.length}</span></button>
     ${gs.map(g=>`<button style="--c:${esc(g.color)}" data-act="bf" data-f="${g.id}" aria-pressed="${f===g.id}"><i></i>${esc(g.name)} <span class="cnt">${D.per[g.id].photos} bilder · ${D.per[g.id].streets.size} gater</span></button>`).join('')}
   </div>
-  ${gs.some(g=>g.id===f) ? `<div class="card row between"><span>Legg til en gate for ${esc(groupById(f).name)} uten bilde</span><select id="t-manual" data-g="${f}"><option value="">Velg gate …</option>${(ST.streets?.s||[]).filter(s=>!D.per[f].streets.has(s.n)).map(s=>`<option>${esc(s.n)}</option>`).join('')}</select></div>` : ''}
+  ${gs.some(g=>g.id===f) ? `<div class="card row between"><span>Legg til en gate for ${esc(groupById(f).name)} uten bilde</span><select id="t-manual" data-g="${f}" data-lazy="missing"><option value="">Velg gate …</option></select></div>` : ''}
   ${shown.length ? `<div class="photos">${shown.map(x=>claimCard(x.gid, x.pid, x.c, {showGroup: f==='check'||f==='all'})).join('')}</div>` : `<div class="empty">${f==='check' ? 'Ingen bilder venter på deg.' : 'Ingen bilder her ennå.'}</div>`}`;
 }
 const imgLoading = new Set();
@@ -1090,7 +1113,7 @@ function viewStudent(D){
   return body;
 }
 function localCard(it){
-  const opts = (ST.streets?.s||[]).map(s=>`<option ${s.n===it.sel?'selected':''}>${esc(s.n)}</option>`).join('');
+  const opts = it.sel ? `<option selected>${esc(it.sel)}</option>` : '';
   let status = '';
   if (it.status==='reading') status += `<span class="row small"><span class="spin"></span> ${esc(it.msg||'Leser skiltet …')}</span>`;
   else if (it.status==='sending') status = `<span class="row small"><span class="spin"></span> Sender …</span>`;
@@ -1106,7 +1129,7 @@ function localCard(it){
     <div class="img"><img src="${esc(it.url)}" alt="Bilde som skal sendes inn"></div>
     <div class="body">
       <div class="row">${status}</div>
-      ${it.status==='ready'||it.status==='error'||(it.status==='reading'&&it.canvas) ? `<select data-sel="${it.id}" aria-label="Hvilken gate?"><option value="">Velg gate …</option>${opts}</select>
+      ${it.status==='ready'||it.status==='error'||(it.status==='reading'&&it.canvas) ? `<select data-sel="${it.id}" data-lazy="all" aria-label="Hvilken gate?"><option value="">Velg gate …</option>${opts}</select>
       <div class="foot"><button class="btn primary small" data-act="s-send" data-id="${it.id}" ${it.sel?'':'disabled'}>Send inn</button><button class="btn small" data-act="s-drop" data-id="${it.id}">Forkast</button></div>` : ''}
     </div>
   </article>`;
@@ -1237,7 +1260,7 @@ function ensureMap(k){
   const M = {el, map:null, layer:null, fitted:false, sig:''};
   MAPS[k] = M;
   if (!window.L){ el.innerHTML = '<div class="empty">Kartet kunne ikke lastes.</div>'; return M; }
-  M.map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:true, zoomSnap:0.25});
+  M.map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:true, zoomSnap:0.25, preferCanvas: k==='wiz'});
   L.tileLayer(TILE_URL, {maxZoom:19, attribution:TILE_ATTR}).addTo(M.map);
   M.layer = L.layerGroup().addTo(M.map);
   if (k==='wiz'){
@@ -1273,6 +1296,7 @@ function drawMap(k, M){
   M.layer.clearLayers();
   const [clat, clon] = s.c;
   L.circle([clat, clon], {radius:s.r, color:'#1B2320', weight:2, dashArray:'8 6', fill:false, interactive:false}).addTo(M.layer);
+  const labelSet = new Set([...s.s].filter(x=>x.l>180).sort((a,b)=>b.l-a.l).slice(0, 70).map(x=>x.n));
   for (const st of s.s){
     const lines = st.g.map(p => { const o=[]; for (let i=0;i<p.length;i+=2) o.push([p[i],p[i+1]]); return o; });
     const o = D ? D.owners.get(st.n) : null;
@@ -1292,7 +1316,7 @@ function drawMap(k, M){
     hit.bindPopup(`<b>${esc(st.n)}</b><br>${fmtM(st.l)}${who?'<br>'+who:''}`);
     if (ST.labels || k==='area'){
       const mp = midPoint(st.g);
-      if (mp && st.l > 180) L.tooltip({permanent:true, direction:'center', className:'lbl-tip', interactive:false}).setLatLng(mp).setContent(esc(st.n)).addTo(M.layer);
+      if (mp && labelSet.has(st.n)) L.tooltip({permanent:true, direction:'center', className:'lbl-tip', interactive:false}).setLatLng(mp).setContent(esc(st.n)).addTo(M.layer);
     }
   }
   L.circleMarker([clat, clon], {radius:7, color:'#fff', weight:3, fillColor:'#C4472F', fillOpacity:1}).bindTooltip(esc(ST.meta?.place ? ST.meta.place.split(',')[0] : 'Start'), {permanent:true, direction:'top', offset:[0,-8], className:'school-tip'}).addTo(M.layer);
@@ -1316,7 +1340,7 @@ function drawWizMap(M){
     }
   }
   const key2 = W.center.lat+','+W.center.lon+','+W.radius;
-  if (M.lastFit !== key2 && M.el.clientWidth > 0 && M.el.clientHeight > 0){ M.map.fitBounds(L.latLng(c).toBounds(W.radius*2.1), {padding:[16,16]}); M.lastFit = key2; }
+  if (M.lastFit !== key2 && M.el.clientWidth > 0 && M.el.clientHeight > 0){ M.map.fitBounds(L.latLng(c).toBounds(W.radius*2.1), {padding:[16,16]}); M.lastFit = key2; M.fitted = true; }
 }
 
 /* ---------- after render hooks ---------- */
@@ -1407,7 +1431,7 @@ document.addEventListener('click', e => {
     case 'open-mine': { const m = (ls('erobre-mine')||[]).find(x=>x.code===t.dataset.code); if (m) openTeacher(m.code, m.key); break; }
     case 'w-cancel': ST.wiz=null; ST.view='landing'; scheduleRender(); break;
     case 'w-pick': { const r = ST.wiz.results[+t.dataset.i]; ST.wiz.results=null; wizSetCenter(r.lat, r.lon, r.sub.split(',').slice(0,2).join(',')); if (!ST.wiz.name) ST.wiz.name=''; break; }
-    case 'w-refetch': if (ST.wiz?.center) wizSetCenter(ST.wiz.center.lat, ST.wiz.center.lon, ST.wiz.place); break;
+    case 'w-refetch': if (ST.wiz?.center) wizFetch(); break;
     case 'w-create': wizCreate(); break;
     case 'j-cancel': ST.view='landing'; scheduleRender(); break;
     case 'j-group': ST.join.gid = t.dataset.g; ST.join.pin=''; scheduleRender(); break;
@@ -1447,7 +1471,7 @@ document.addEventListener('change', e => {
   if (t.id==='w-name'){ ST.wiz.name = t.value; return; }
   if (t.classList.contains('w-gname')){ ST.wiz.names[+t.dataset.i] = t.value; return; }
   if (t.id==='w-count'){ ST.wiz.count = +t.value; while (ST.wiz.names.length < ST.wiz.count) ST.wiz.names.push('Lag '+COLORS[ST.wiz.names.length].n); scheduleRender(); return; }
-  if (t.id==='w-radius'){ ST.wiz.radius = +t.value; ST.wiz._cache=null; scheduleRender(); return; }
+  if (t.id==='w-radius'){ ST.wiz.radius = +t.value; ST.wiz._cache=null; scheduleRender(); wizMaybeRefetch(); return; }
   if (t.classList.contains('t-gname')){ const v = t.value.trim().slice(0,24); if (v) teacherWrite(`groups/${t.dataset.g}/name`, v); return; }
   if (t.dataset.chal){ teacherWrite('meta/off/'+t.dataset.chal, t.checked ? null : true); return; }
   if (t.id==='t-deadline'){ const [hh, mi] = String(t.value||'').split(':').map(Number); if (isNaN(hh)) { teacherWrite('meta/deadlineAt', null); return; } const d = new Date(); d.setHours(hh, mi||0, 0, 0); teacherWrite('meta/deadlineAt', d.getTime()); return; }
@@ -1471,6 +1495,19 @@ document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.tagN
 document.addEventListener('fullscreenchange', () => setTimeout(()=>MAPS.game?.map?.invalidateSize(), 150));
 
 $('#s-files').addEventListener('change', e => { const sf = e.target, files = [...sf.files]; sf.value = ''; if (ST.view==='student' && files.length) handleFiles(files); });
+
+setInterval(() => { const el = document.querySelector('[data-elapsed]'); if (el && ST.wiz?.fetching) el.textContent = Math.round((Date.now()-ST.wiz.fetchStart)/1000) + ' s'; }, 1000);
+
+/* lazy street lists: filled when a select is opened */
+function fillLazy(sel){
+  if (!sel || !sel.dataset.lazy || sel.dataset.filled) return;
+  let names = (ST.streets?.s||[]).map(x=>x.n);
+  if (sel.dataset.lazy==='missing'){ const have = derive().per[sel.dataset.g]?.streets || new Set(); names = names.filter(n=>!have.has(n)); }
+  const cur = sel.value, frag = document.createDocumentFragment();
+  for (const n of names){ if (n===cur) continue; const o = document.createElement('option'); o.textContent = n; frag.appendChild(o); }
+  sel.appendChild(frag); sel.value = cur; sel.dataset.filled = '1';
+}
+['pointerdown','focusin','keydown','touchstart'].forEach(ev => document.addEventListener(ev, e => { const t = e.target; if (t && t.tagName==='SELECT') fillLazy(t); }, {capture:true, passive:true}));
 
 /* ---------- timer tick ---------- */
 let lastTimerLeft = null;
