@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Erobre nabolaget</title>
+<meta name="description" content="Gymspill der elevene erobrer gatene i nabolaget ved å fotografere gatenavnskilt.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#EDF0EC; --surface:#FFFFFF; --surface-2:#F5F7F4; --ink:#1B2320; --muted:#5A6862; --line:#D3DBD5;
+  --accent:#C4472F; --accent-ink:#FFFFFF; --accent-soft:#F6E1DB;
+  --good:#1F8A52; --warn:#A96C12; --bad:#C0392B;
+  --plate:#FFFFFF; --plate-ink:#12201B; --plate-edge:#12201B;
+  --shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.06);
+  --display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#111614; --surface:#1A211E; --surface-2:#151B18; --ink:#E7ECE9; --muted:#9AA8A1; --line:#2B3531;
+    --accent:#EA6A4E; --accent-ink:#1A0F0B; --accent-soft:#3A221C;
+    --good:#4CC486; --warn:#E3A948; --bad:#F06A5B;
+    --plate:#F4F6F3; --plate-ink:#12201B; --plate-edge:#0B1411;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:clamp(28px,4vw,40px);font-weight:900;text-transform:uppercase}
+h3{font-size:22px;font-weight:800;text-transform:uppercase}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.label{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+.top{position:sticky;top:0;z-index:1000;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top-inner{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:12px 0;display:flex;flex-direction:column;gap:10px}
+.top-inner.solo{padding-block:12px}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand h1{font-size:clamp(28px,5vw,44px);font-weight:900;text-transform:uppercase}
+.brand h1 span{color:var(--accent)}
+.brand h1 a{color:inherit;text-decoration:none}
+.brand .where{font-size:14px;color:var(--muted)}
+.brand .right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.code-badge{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.12em;background:var(--ink);color:var(--bg);padding:2px 10px 0;border-radius:6px}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;padding:10px 14px 11px;cursor:pointer;font-family:var(--display);font-weight:800;font-size:19px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:2px solid currentColor;font-size:13px;line-height:1}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] .n{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tab .badge{background:var(--accent);color:var(--accent-ink);border-radius:99px;font-family:var(--body);font-size:12px;padding:0 7px;font-weight:700}
+
+main{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:flex;flex-direction:column;gap:20px}
+.intro{display:flex;flex-direction:column;gap:8px;max-width:68ch}
+.intro p{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px;align-items:start}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.big{font-size:18px;padding:14px 20px;border-radius:10px}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn.good{color:var(--good)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+input[type=text],input[type=search]{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 11px}
+input.code-in{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.2em;text-transform:uppercase;text-align:center;padding:8px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 8px;max-width:100%}
+.check{display:flex;gap:10px;align-items:flex-start;padding-block:6px}
+.check input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px;flex:none}
+.notice{background:var(--accent-soft);border-radius:10px;padding:12px 14px;font-size:15px}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px;font-size:14px}
+
+.plate{display:inline-flex;align-items:center;background:var(--plate);color:var(--plate-ink);border:2.5px solid var(--plate-edge);border-radius:5px;box-shadow:inset 0 0 0 2px var(--plate),inset 0 0 0 3.5px var(--plate-edge);padding:3px 11px 2px;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:17px;line-height:1.15;white-space:nowrap}
+.plate.big{font-size:28px;padding:6px 16px 4px;border-width:3px}
+.plate.off{opacity:.5;text-decoration:line-through}
+.team{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+.team i{width:14px;height:14px;border-radius:4px;background:var(--c);flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:700;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.pill.good{color:var(--good)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)}
+
+/* landing */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:10px}
+.hero h2{font-size:clamp(44px,8vw,92px);line-height:.92}
+.hero h2 span{color:var(--accent)}
+.hero .lead{font-size:19px;color:var(--muted);max-width:44ch;margin-top:14px}
+.signs{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.signs .plate{font-size:clamp(20px,3vw,30px);padding:8px 18px 6px;transform:rotate(var(--r,0deg))}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px}
+.choice{display:flex;flex-direction:column;gap:14px}
+.choice h3{font-size:30px}
+.mine{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mine li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding-block:8px;border-top:1px solid var(--line)}
+
+/* join */
+.gbtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px}
+.gbtn{appearance:none;cursor:pointer;border:0;border-radius:12px;background:var(--c);color:#fff;padding:22px 16px;font-family:var(--display);font-weight:900;font-size:28px;text-transform:uppercase;text-shadow:0 1px 0 rgba(0,0,0,.25);box-shadow:var(--shadow)}
+.pin{display:flex;gap:10px;justify-content:center}
+.pin span{width:52px;height:64px;border-radius:10px;border:2px solid var(--line);display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:40px;background:var(--surface)}
+.keys{display:grid;grid-template-columns:repeat(3,76px);gap:10px;justify-content:center}
+.keys button{height:62px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-weight:800;font-size:30px;cursor:pointer}
+
+/* phase control */
+.phasebar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.phasebar button{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:700;font-size:14px}
+.phasebar button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.phases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:ph}
+.phases li{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:start}
+.phases li::before{counter-increment:ph;content:counter(ph);font-family:var(--display);font-weight:900;font-size:26px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg)}
+.phases b{display:block}
+.timer{font-family:var(--display);font-weight:900;font-size:clamp(72px,14vw,150px);line-height:.9;font-variant-numeric:tabular-nums}
+.bigcode{font-family:var(--display);font-weight:900;font-size:clamp(40px,6vw,64px);line-height:1;letter-spacing:.08em;word-break:break-all}
+.timer.done{color:var(--accent)}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.qr{background:#fff;border-radius:10px;padding:8px;width:180px;max-width:100%}
+.qr svg{display:block;width:100%;height:auto}
+.pins{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:10px}
+.pinc{border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;padding:8px 12px;background:var(--surface)}
+.pinc b{font-family:var(--display);font-size:30px;font-weight:900;letter-spacing:.15em;display:block;line-height:1}
+.group-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding-block:8px;border-top:1px solid var(--line)}
+.group-row:first-child{border-top:0}
+.swatch-btn{width:34px;height:34px;border-radius:8px;border:0;background:var(--c);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.swatches{display:flex;gap:6px;flex-wrap:wrap;grid-column:1 / -1}
+.swatches button{width:28px;height:28px;border-radius:6px;border:2px solid transparent;background:var(--c);cursor:pointer}
+.swatches button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--surface)}
+.swatches button[disabled]{opacity:.25;cursor:not-allowed}
+.stat-line{display:flex;gap:24px;flex-wrap:wrap}
+.stat .v{font-family:var(--display);font-weight:900;font-size:34px;line-height:1}
+.results{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.results button{appearance:none;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:var(--surface);padding:8px 12px;cursor:pointer}
+.results li:first-child button{border-top:0}
+.results button:hover{background:var(--surface-2)}
+
+/* photos */
+.gpick{display:flex;gap:8px;flex-wrap:wrap}
+.gpick button{appearance:none;cursor:pointer;border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-weight:700}
+.gpick button i{width:14px;height:14px;border-radius:4px;background:var(--c,var(--ink))}
+.gpick button[aria-pressed="true"]{border-color:var(--c,var(--ink));box-shadow:inset 0 0 0 1px var(--c,var(--ink))}
+.gpick .cnt{font-size:13px;color:var(--muted);font-weight:400}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
+.photo{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.photo.flag{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn)}
+.photo .img{aspect-ratio:4/3;background:var(--surface-2);position:relative;max-width:100%}
+.photo .img img{width:100%;height:100%;object-fit:cover;display:block}
+.photo .img .noimg{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;padding:10px;text-align:center}
+.photo .body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.photo .foot{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;display:inline-block;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.found{display:flex;flex-wrap:wrap;gap:6px}
+.upload-btn{display:flex;flex-direction:column;align-items:center;gap:6px;border:2.5px dashed var(--line);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;background:var(--surface)}
+.upload-btn:hover{border-color:var(--accent)}
+.upload-btn h3{font-size:28px}
+
+/* score */
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;align-items:start}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.tcard header{background:var(--c);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tcard header h3{color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.tcard .nums{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.tcard .nums div{background:var(--surface);padding:10px 16px}
+.tcard .nums .v{font-family:var(--display);font-weight:900;font-size:30px;line-height:1}
+.tcard ul{list-style:none;margin:0;padding:8px 16px 14px;display:flex;flex-direction:column}
+.tcard li{display:flex;justify-content:space-between;gap:10px;padding-block:5px;border-bottom:1px dashed var(--line);font-size:15px}
+.tcard li:last-child{border-bottom:0}
+.tcard li .m{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tcard .sub{padding:10px 16px 0}
+.adj{display:flex;gap:8px;align-items:center;padding:10px 16px;border-top:1px solid var(--line);font-size:14px}
+.adj input{width:90px}
+
+/* duels */
+.duels{display:flex;flex-direction:column;gap:14px}
+.duel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;box-shadow:var(--shadow)}
+.duel.decided{background:var(--surface-2);box-shadow:none}
+.duel .stake{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.duel .meters{font-family:var(--display);font-weight:900;font-size:40px;line-height:1}
+.duel .ch{border-left:4px solid var(--accent);padding-left:14px;display:flex;flex-direction:column;gap:6px}
+.duel .ch h3{font-size:26px}
+.winners{display:flex;gap:8px;flex-wrap:wrap}
+.winners button{appearance:none;cursor:pointer;border:2px solid var(--c);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 12px;font-weight:700;display:flex;gap:8px;align-items:center}
+.winners button i{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.winners button:hover{background:var(--c);color:#fff}
+.progress{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress b{display:block;height:100%;background:var(--accent);border-radius:99px}
+@media (max-width:720px){.duel{grid-template-columns:1fr}}
+
+/* map */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media (max-width:900px){.mapgrid{grid-template-columns:1fr}}
+.mapwrap{position:relative;width:100%;max-width:100%;aspect-ratio:1/1;max-height:78vh;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.mapwrap.wide{aspect-ratio:16/10}
+.mapwrap .lmap{position:absolute!important;inset:0}
+.mapwrap:fullscreen{max-height:none;border-radius:0}
+.leaflet-container{font-family:var(--body);background:var(--surface-2)}
+.lbl-tip{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.03em;font-size:13px;color:#1B2320;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.lbl-tip::before{display:none}
+.school-tip{background:var(--accent)!important;color:#fff!important;border:0!important;font-weight:700}
+.board{display:flex;flex-direction:column;gap:12px}
+.rank{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.rank.me{box-shadow:0 0 0 2px var(--c)}
+.rank .pos{font-family:var(--display);font-weight:900;font-size:30px;line-height:1;text-align:center}
+.rank .km{font-family:var(--display);font-weight:900;font-size:28px;line-height:1;text-align:right}
+.rank .bar{grid-column:2 / -1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.rank .bar b{display:block;height:100%;background:var(--c)}
+.rank .meta{font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.legend span{display:flex;gap:8px;align-items:center}
+.legend svg{width:40px;height:10px;flex:none}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;z-index:3000;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.empty{padding:26px;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:12px;display:flex;flex-direction:column;gap:10px;align-items:center}
+footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<header class="top" id="top"></header>
+<main id="main"><p class="muted">Laster …</p></main>
+<footer>Inspirert av Jet Lag: The Game. Kartdata © OpenStreetMap-bidragsytere (ODbL), kartfliser © CARTO.</footer>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="s-files" accept="image/*" multiple hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+'use strict';
+/* =========================================================
+   Erobre nabolaget · statisk nettside (GitHub Pages + Firebase)
+   ========================================================= */
+const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const FETCH_R = 2100;         // m, radius for street download
+const MIN_LEN = 15;           // m inside the area before a street counts
+const EMU = new URLSearchParams(location.search).has('emu');
+
+const COLORS = [
+  {c:'#E03E3E', n:'Rød'}, {c:'#2F6FEB', n:'Blå'}, {c:'#E3A90B', n:'Gul'}, {c:'#1F9D55', n:'Grønn'},
+  {c:'#8B4FD6', n:'Lilla'}, {c:'#0E9C9C', n:'Turkis'}, {c:'#DB4D98', n:'Rosa'}, {c:'#EE7A1A', n:'Oransje'}
+];
+const CHALLENGES = [
+  {id:'ssp', t:'Stein, saks, papir', how:'Én fra hvert lag. Best av tre. Er dere flere enn to lag, spiller vinnerne videre til bare én står igjen.', kit:'Ikke noe utstyr', multi:true},
+  {id:'sprint', t:'Sprint til kjeglen', how:'Én fra hvert lag står på streken. Første som tar på kjeglen 20 meter unna, vinner.', kit:'1 kjegle, 1 strek', multi:true},
+  {id:'flamingo', t:'Flamingo', how:'Én fra hvert lag står på ett bein med armene i kors. Den som står lengst uten å sette ned foten, vinner.', kit:'Ikke noe utstyr', multi:true},
+  {id:'lengde', t:'Stille lengde', how:'Én fra hvert lag hopper fra stående. Lengst hopp, målt ved hælen, vinner. Ett hopp hver.', kit:'Teip eller målebånd', multi:true},
+  {id:'naermest', t:'Nærmest kjeglen', how:'Én fra hvert lag kaster en sandsekk mot en kjegle 8 meter unna. Sekken som ligger nærmest, vinner.', kit:'1 kjegle, sandsekker', multi:true},
+  {id:'planke', t:'Planken', how:'Én fra hvert lag holder planken. Den som holder lengst med rett rygg og knærne i lufta, vinner.', kit:'Matter', multi:true},
+  {id:'veggsitt', t:'Veggsitting', how:'Én fra hvert lag sitter mot veggen med 90 grader i knærne. Den som reiser seg sist, vinner.', kit:'En vegg', multi:true},
+  {id:'krabbe', t:'Krabbegang', how:'Én fra hvert lag går krabbegang 10 meter. Første med hendene over streken, vinner.', kit:'2 streker', multi:true},
+  {id:'kurv', t:'Første i kurven', how:'Én fra hvert lag skyter fra straffekastlinja, ett skudd hver per runde. Første runde der bare én treffer, avgjør.', kit:'Basketkurv, ball', multi:true},
+  {id:'kjegle', t:'Velt kjeglen', how:'Én fra hvert lag triller en ball mot en kjegle 6 meter unna, ett forsøk hver per runde. Første runde der bare én velter den, avgjør.', kit:'1 kjegle, 1 ball', multi:true},
+  {id:'hink', t:'Hinkestafett', how:'Hele laget. Én og én hinker på ett bein rundt kjeglen og tilbake. Laget som blir ferdig først, vinner.', kit:'Kjegler', multi:true},
+  {id:'tau', t:'Tautrekking', how:'Hele laget mot hele laget. Laget som drar midtmerket over sin egen strek, vinner.', kit:'Tau', multi:false}
+];
+const PHASES = [
+  {n:1, t:'Løp', s:'Elevene ser kartet og tiden'},
+  {n:2, t:'Last opp', s:'Elevene laster opp bilder'},
+  {n:3, t:'Poeng', s:'Opplastingen stenger'},
+  {n:4, t:'Duell', s:'Elevene ser duellene'},
+  {n:5, t:'Ferdig', s:'Elevene ser sluttstillingen'}
+];
+
+/* ---------- helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtM = m => m >= 1000 ? (m/1000).toLocaleString('nb-NO',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' km' : Math.round(m).toLocaleString('nb-NO') + ' m';
+const fmtKm = m => (m/1000).toLocaleString('nb-NO',{minimumFractionDigits:2,maximumFractionDigits:2});
+const slug = n => n.toLowerCase().replace(/æ/g,'ae').replace(/ø/g,'o').replace(/å/g,'aa').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'x';
+const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const key = s => String(s||'').toLowerCase().normalize('NFC').replace(/[^a-zæøåäöü0-9]/g,'');
+const rand = (n, alphabet) => { const a = new Uint32Array(n); crypto.getRandomValues(a); return [...a].map(x => alphabet[x % alphabet.length]).join(''); };
+const CODE_ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, 4200); }
+function ls(k, v){ try { if (v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); if (v===null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch(e){ return null; } }
+async function copy(text){ try { await navigator.clipboard.writeText(text); toast('Kopiert.'); } catch(e){ toast('Kunne ikke kopiere. Marker teksten og kopier selv.'); } }
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Kunne ikke laste '+src)); document.head.appendChild(s); }); }
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let prev=Array.from({length:n+1},(_,i)=>i); for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; } return prev[n]; }
+// smallest edit distance between p and any substring of t
+function subLev(p, t){ const m=p.length, n=t.length; if(!m) return 0; let prev=new Array(n+1).fill(0); for (let i=1;i<=m;i++){ const cur=new Array(n+1); cur[0]=i; for (let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(p[i-1]===t[j-1]?0:1)); prev=cur; } let best=Infinity; for (let j=0;j<=n;j++) if (prev[j]<best) best=prev[j]; return best; }
+
+/* ---------- geometry ---------- */
+function projector(lat0, lon0){
+  const KX = 111320*Math.cos(lat0*Math.PI/180), KY = 110540;
+  return { xy:(lat,lon)=>[(lon-lon0)*KX, (lat-lat0)*KY], ll:(x,y)=>[lat0 + y/KY, lon0 + x/KX] };
+}
+function clipPoly(f, r){
+  const out=[]; let cur=null; const r2=r*r;
+  for (let i=0;i<f.length-2;i+=2){
+    const ax=f[i], ay=f[i+1], bx=f[i+2], by=f[i+3], dx=bx-ax, dy=by-ay, A=dx*dx+dy*dy;
+    if (!A) continue;
+    const B=2*(ax*dx+ay*dy), C=ax*ax+ay*ay-r2, disc=B*B-4*A*C;
+    if (disc<=0){ cur=null; continue; }
+    const sq=Math.sqrt(disc), s=Math.max(0,(-B-sq)/(2*A)), e=Math.min(1,(-B+sq)/(2*A));
+    if (s>=e){ cur=null; continue; }
+    const ex=ax+dx*e, ey=ay+dy*e;
+    if (cur && s===0) cur.push(ex,ey); else { cur=[ax+dx*s, ay+dy*s, ex, ey]; out.push(cur); }
+    if (e<1) cur=null;
+  }
+  return out;
+}
+const polyLen = f => { let s=0; for (let i=0;i<f.length-2;i+=2) s+=Math.hypot(f[i+2]-f[i], f[i+3]-f[i+1]); return s; };
+
+/* ---------- state ---------- */
+const ST = {
+  view:'boot', session:null, code:null, role:null,
+  meta:null, groups:{}, streets:null, sIdx:new Map(), claims:{}, verdicts:{}, duels:{}, secret:null, teachersOk:false,
+  tab:'lop', offset:0, imgs:{}, local:[], pickGroup:null, bilderFilter:'check',
+  join:{code:'', meta:null, groups:null, gid:null, pin:''},
+  wiz:null, labels:true, openSwatch:null, confirm:null
+};
+let fbApp=null, db=null, auth=null, UID=null;
+const now = () => Date.now() + (ST.offset||0);
+function fbConfigured(){ const c=window.FIREBASE_CONFIG; return EMU || !!(window.firebase && c && c.apiKey && !/FYLL/.test(c.apiKey)); }
+async function initFirebase(){
+  if (db) return;
+  if (!window.firebase) throw new Error('Firebase kunne ikke lastes. Sjekk nettet.');
+  const cfg = EMU ? {apiKey:'demo-key', authDomain:'demo-erobre.firebaseapp.com', projectId:'demo-erobre', databaseURL:'https://demo-erobre.firebaseio.com'} : window.FIREBASE_CONFIG;
+  fbApp = firebase.initializeApp(cfg);
+  auth = firebase.auth(); db = firebase.database();
+  if (EMU){ auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 9000); }
+  const user = await new Promise(r => { const un = auth.onAuthStateChanged(u => { un(); r(u); }); });
+  UID = (user || (await auth.signInAnonymously()).user).uid;
+  db.ref('.info/serverTimeOffset').on('value', s => { ST.offset = s.val() || 0; });
+}
+const gref = p => db.ref('games/' + ST.code + (p ? '/' + p : ''));
+const isTeacher = () => ST.role === 'teacher';
+const groupsSorted = () => Object.entries(ST.groups||{}).map(([id,g])=>({id, ...g})).sort((a,b)=>(a.o||0)-(b.o||0));
+const groupById = id => { const g = ST.groups?.[id]; return g ? {id, ...g} : null; };
+const phase = () => ST.meta?.phase || 1;
+const offSet = () => ST.meta?.off || {};
+
+/* ---------- subscriptions ---------- */
+let subs = [];
+function unsubscribeAll(){ subs.forEach(f=>f()); subs=[]; }
+function listen(path, cb){
+  const ref = gref(path);
+  const h = ref.on('value', s => { cb(s.val()); scheduleRender(); }, err => { console.warn(path, err); if (path==='meta') { toast('Mistet tilgangen til spillet.'); } });
+  subs.push(() => ref.off('value', h));
+}
+function setStreets(raw){
+  ST.streets = null; ST.sIdx = new Map();
+  if (!raw) return;
+  try {
+    const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    ST.streets = d;
+    for (const s of d.s) ST.sIdx.set(s.n, s);
+  } catch(e){ console.warn(e); }
+}
+function startGame(code, role){
+  unsubscribeAll();
+  ST.code = code; ST.role = role; ST.view = role; ST.meta=null; ST.groups={}; ST.claims={}; ST.verdicts={}; ST.duels={}; ST.secret=null; ST.imgs={}; ST.local=[];
+  ST.tab = ls('erobre-tab-'+code) || (role==='teacher' ? 'oppsett' : 'main');
+  listen('meta', v => { ST.meta = v; if (v===null && ST.view!=='landing'){ toast('Spillet finnes ikke lenger.'); leaveGame(); } });
+  listen('groups', v => { ST.groups = v || {}; });
+  listen('claims', v => { ST.claims = v || {}; });
+  listen('verdicts', v => { ST.verdicts = v || {}; });
+  listen('duels', v => { ST.duels = v || {}; });
+  if (role==='teacher') listen('secret', v => { ST.secret = v; });
+  gref('streets').once('value').then(s => { setStreets(s.val()); scheduleRender(); }).catch(e=>console.warn(e));
+  scheduleRender();
+}
+function leaveGame(){
+  unsubscribeAll();
+  ls('erobre-session', null);
+  ST.code=null; ST.role=null; ST.view='landing'; ST.meta=null; ST.streets=null;
+  history.replaceState(null, '', location.pathname + location.search);
+  scheduleRender();
+}
+
+/* ---------- derived game state ---------- */
+function claimStatus(gid, pid, c){
+  const v = ST.verdicts?.[gid]?.[pid];
+  if (v === true) return 'ok';
+  if (v === false) return 'rejected';
+  return c.v ? 'ok' : 'pending';
+}
+function derive(){
+  const gs = groupsSorted(), gids = new Set(gs.map(g=>g.id));
+  const has = new Map(), per = {};
+  for (const g of gs) per[g.id] = {streets:new Set(), photos:0, pending:0, rejected:0};
+  for (const [gid, list] of Object.entries(ST.claims||{})){
+    if (!gids.has(gid)) continue;
+    for (const [pid, c] of Object.entries(list||{})){
+      const st = claimStatus(gid, pid, c);
+      if (!c.m) per[gid].photos++;
+      if (st==='pending') per[gid].pending++;
+      if (st==='rejected') per[gid].rejected++;
+      if (st!=='ok') continue;
+      for (const n of Object.values(c.s||{})){
+        if (!ST.sIdx.has(n)) continue;
+        per[gid].streets.add(n);
+        if (!has.has(n)) has.set(n, new Set());
+        has.get(n).add(gid);
+      }
+    }
+  }
+  const owners = new Map(), contested = [];
+  for (const [n, set] of has){
+    const gl = [...set], len = ST.sIdx.get(n).l;
+    if (gl.length===1) owners.set(n, {g:gl[0], how:'unik', len});
+    else {
+      const d = ST.duels?.[slug(n)] || {};
+      const won = !!(d.winner && gl.includes(d.winner));
+      owners.set(n, {g: won ? d.winner : null, how: won ? 'duell' : 'strid', gs:gl, len});
+      contested.push({n, gs:gl, len, d, won});
+    }
+  }
+  contested.sort((a,b)=>b.len-a.len || a.n.localeCompare(b.n,'nb'));
+  const adjust = ST.meta?.adjust || {};
+  const score = {};
+  for (const g of gs){
+    const s = {g, m:0, n:0, uniqM:0, uniqN:0, duelN:0, pendingN:0, found:per[g.id].streets.size, photos:per[g.id].photos, adj:+(adjust[g.id]||0)};
+    for (const [, o] of owners){
+      if (o.g===g.id){ s.m+=o.len; s.n++; if (o.how==='unik'){ s.uniqM+=o.len; s.uniqN++; } }
+      if (o.gs && o.gs.includes(g.id)){ s.duelN++; if (!o.g) s.pendingN++; }
+    }
+    s.total = s.m + s.adj; s.phase3 = s.uniqM + s.adj;
+    score[g.id] = s;
+  }
+  const ranking = Object.values(score).sort((a,b)=>b.total-a.total || b.n-a.n);
+  const pendingAll = Object.values(per).reduce((a,p)=>a+p.pending,0);
+  return {owners, contested, score, ranking, per, pendingAll};
+}
+
+/* ---------- rendering core ---------- */
+let renderQueued = false;
+function scheduleRender(){ if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
+function editing(){ const a=document.activeElement; return a && (a.tagName==='INPUT' && /^(text|search)$/.test(a.type)) && a.dataset.live!=='1'; }
+function render(){
+  if (editing()) return;
+  const main = $('#main'), top = $('#top');
+  const y = window.scrollY;
+  let html = '', head = '';
+  switch (ST.view){
+    case 'boot': head = headerSimple(); html = '<p class="muted">Laster …</p>'; break;
+    case 'landing': head = headerSimple(); html = viewLanding(); break;
+    case 'join': head = headerSimple(); html = viewJoin(); break;
+    case 'create': head = headerSimple(); html = viewCreate(); break;
+    case 'teacher': { const D = derive(); head = headerTeacher(D); html = viewTeacher(D); break; }
+    case 'student': { const D = derive(); head = headerStudent(); html = viewStudent(D); break; }
+  }
+  top.innerHTML = head;
+  main.innerHTML = html;
+  mountMaps();
+  afterRender();
+  window.scrollTo(0, y);
+}
+const teamChip = g => g ? `<span class="team" style="--c:${esc(g.color)}"><i></i>${esc(g.name)}</span>` : '';
+function headerSimple(){
+  return `<div class="top-inner solo"><div class="brand"><h1><a href="./">Erobre <span>nabolaget</span></a></h1></div></div>`;
+}
+
+/* ---------- landing ---------- */
+function viewLanding(){
+  const mine = (ls('erobre-mine')||[]).slice(0,8);
+  const cfgOk = fbConfigured();
+  return `
+  ${cfgOk ? '' : `<div class="notice"><b>Nettsiden er ikke koblet til en database ennå.</b> Fyll inn Firebase-oppsettet i <code>firebase-config.js</code>. Se README.md i repoet.</div>`}
+  <section class="hero">
+    <div>
+      <h2>Erobre <span>nabolaget</span></h2>
+      <p class="lead">Elevene løper rundt i grupper og fotograferer gatenavnskilt. Gater bare én gruppe har funnet, er erobret. Resten avgjøres i duell i gymsalen. Flest meter gate vinner.</p>
+    </div>
+    <div class="signs" aria-hidden="true">
+      <span class="plate" style="--r:-2deg">Storgata</span>
+      <span class="plate" style="--r:1.5deg">Skolevegen</span>
+      <span class="plate" style="--r:-1deg">Kirkebakken</span>
+    </div>
+  </section>
+  <div class="choices">
+    <div class="card choice">
+      <h3>Jeg er elev</h3>
+      <p class="muted">Skriv inn spillkoden læreren viser.</p>
+      <form id="f-code" class="stack" autocomplete="off">
+        <label class="label" for="code-in">Spillkode</label>
+        <input type="text" class="code-in" id="code-in" maxlength="6" placeholder="ABC123" value="${esc(ST.join.code)}" ${cfgOk?'':'disabled'}>
+        <button class="btn primary big" type="submit" ${cfgOk?'':'disabled'}>Bli med</button>
+      </form>
+    </div>
+    <div class="card choice">
+      <h3>Jeg er lærer</h3>
+      <p class="muted">Velg sted og område, lag gruppene, og vis spillkoden til klassen.</p>
+      <div><button class="btn primary big" data-act="create" ${cfgOk?'':'disabled'}>Lag et nytt spill</button></div>
+      ${mine.length ? `<div class="stack" style="gap:6px"><div class="label">Spill du har laget på denne maskinen</div><ul class="mine">${mine.map(m=>`<li><span><b>${esc(m.name||m.code)}</b> <span class="muted small">· ${esc(m.code)} · ${new Date(m.created).toLocaleDateString('nb-NO')}</span></span><button class="btn small" data-act="open-mine" data-code="${esc(m.code)}">Åpne</button></li>`).join('')}</ul></div>` : ''}
+    </div>
+  </div>
+  <div class="card stack">
+    <h3>Slik fungerer det</h3>
+    <ol class="phases">
+      <li><div><b>Løp og fotografer</b><span class="muted">Gruppene løper innenfor sirkelen på kartet og tar bilde av så mange gatenavnskilt de klarer.</span></div></li>
+      <li><div><b>Last opp</b><span class="muted">Tilbake på skolen laster hver gruppe opp bildene på sin iPad eller PC. Tekstleseren kjenner igjen gatenavnet, og læreren sjekker de usikre.</span></div></li>
+      <li><div><b>Poeng</b><span class="muted">Gater bare én gruppe har funnet, er erobret. Lengden på gata i meter er poengene.</span></div></li>
+      <li><div><b>Duell</b><span class="muted">Har flere grupper samme gate, avgjøres den med en kort øvelse. Vinneren tar hele gata.</span></div></li>
+    </ol>
+  </div>`;
+}
+
+/* ---------- join (student) ---------- */
+function viewJoin(){
+  const J = ST.join;
+  if (!J.meta) return `<div class="card stack"><p class="row"><span class="spin"></span> Finner spillet …</p></div>`;
+  const gs = Object.entries(J.groups||{}).map(([id,g])=>({id,...g})).sort((a,b)=>(a.o||0)-(b.o||0));
+  if (!J.gid) return `
+    <div class="intro"><h2>${esc(J.meta.name||'Spill')}</h2><p>Trykk på gruppa di.</p></div>
+    <div class="gbtns">${gs.map(g=>`<button class="gbtn" style="--c:${esc(g.color)}" data-act="j-group" data-g="${g.id}">${esc(g.name)}</button>`).join('')}</div>
+    <div><button class="linkbtn" data-act="j-cancel">Avbryt</button></div>`;
+  const g = gs.find(x=>x.id===J.gid);
+  const dots = [0,1,2,3].map(i=>`<span>${J.pin[i] ? '•' : ''}</span>`).join('');
+  return `
+    <div class="intro"><h2>${esc(g?.name||'')}</h2><p>Skriv inn gruppekoden på fire siffer. Læreren har den.</p></div>
+    <div class="card stack" style="align-items:center">
+      <div class="pin" aria-label="Kode">${dots}</div>
+      <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="j-key" data-k="${n}">${n}</button>`).join('')}<button data-act="j-back" aria-label="Tilbake">←</button><button data-act="j-key" data-k="0">0</button><button data-act="j-clear" aria-label="Tøm">×</button></div>
+      <button class="linkbtn" data-act="j-regroup">Velg en annen gruppe</button>
+    </div>`;
+}
+async function openJoin(code){
+  code = String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if (code.length < 4){ toast('Spillkoden har seks tegn.'); return; }
+  ST.join = {code, meta:null, groups:null, gid:null, pin:''};
+  ST.view = 'join'; scheduleRender();
+  try {
+    await initFirebase();
+    const [m, g] = await Promise.all([db.ref('games/'+code+'/meta').once('value'), db.ref('games/'+code+'/groups').once('value')]);
+    if (!m.exists()){ toast('Fant ikke noe spill med koden ' + code + '.'); ST.view='landing'; scheduleRender(); return; }
+    ST.join.meta = m.val(); ST.join.groups = g.val() || {};
+  } catch(e){ console.warn(e); toast('Fant ikke spillet. Sjekk koden og nettet.'); ST.view='landing'; }
+  scheduleRender();
+}
+async function submitPin(){
+  const J = ST.join;
+  try {
+    await db.ref(`games/${J.code}/members/${UID}`).set({g:J.gid, pin:J.pin, t:firebase.database.ServerValue.TIMESTAMP});
+    ls('erobre-session', {role:'student', code:J.code, gid:J.gid});
+    ST.me = {gid:J.gid};
+    history.replaceState(null, '', location.pathname + location.search);
+    startGame(J.code, 'student');
+  } catch(e){
+    J.pin=''; toast('Feil kode. Prøv igjen.'); scheduleRender();
+  }
+}
+
+/* ---------- create (teacher wizard) ---------- */
+function newWizard(){
+  return {name:'', q:'', results:null, searching:false, center:null, place:'', radius:1000, raw:null, fetching:false, err:'', count:4, names:COLORS.slice(0,4).map(c=>'Lag '+c.n), creating:false};
+}
+function wizArea(){
+  const W = ST.wiz; if (!W.raw || !W.center) return null;
+  if (W._cacheR === W.radius && W._cache) return W._cache;
+  const P = projector(W.center.lat, W.center.lon);
+  const by = new Map();
+  for (const w of W.raw){
+    const pieces = clipPoly(w.xy, W.radius);
+    if (!pieces.length) continue;
+    const rec = by.get(w.n) || {n:w.n, pieces:[], len:0};
+    for (const p of pieces){ rec.pieces.push(p); rec.len += polyLen(p); }
+    by.set(w.n, rec);
+  }
+  const list = [...by.values()].filter(r=>r.len>=MIN_LEN).sort((a,b)=>a.n.localeCompare(b.n,'nb'));
+  const total = list.reduce((a,r)=>a+r.len,0);
+  const out = {list, total, P};
+  W._cache = out; W._cacheR = W.radius;
+  return out;
+}
+function viewCreate(){
+  const W = ST.wiz, A = wizArea();
+  return `
+  <div class="intro"><h2>Lag et nytt spill</h2><p>Finn skolen på kartet, velg hvor stort området skal være, og lag gruppene. Gatene hentes fra OpenStreetMap.</p></div>
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card stack">
+        <label class="label" for="w-name">Navn på spillet</label>
+        <input type="text" id="w-name" placeholder="For eksempel 7A høst" value="${esc(W.name)}" maxlength="40">
+      </div>
+      <div class="card stack">
+        <div class="label">Startsted</div>
+        <form id="f-search" class="row" style="flex-wrap:nowrap" autocomplete="off">
+          <input type="search" id="w-q" placeholder="Søk etter skolen eller et sted" value="${esc(W.q)}">
+          <button class="btn" type="submit">Søk</button>
+        </form>
+        ${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
+        ${W.results ? (W.results.length ? `<ul class="results">${W.results.map((r,i)=>`<li><button data-act="w-pick" data-i="${i}"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.sub)}</span></button></li>`).join('')}</ul>` : `<p class="small muted">Fant ingenting. Prøv et annet søk, eller klikk på kartet.</p>`) : ''}
+        <p class="small muted">${W.center ? `Start og mål: <b>${esc(W.place||'valgt punkt')}</b>. Klikk på kartet eller dra markøren for å flytte.` : 'Du kan også klikke rett på kartet.'}</p>
+      </div>
+      <div class="card stack">
+        <label class="stack" for="w-radius" style="gap:4px">
+          <span class="row between"><span class="label">Radius</span><b class="num" id="w-rlabel">${W.radius.toLocaleString('nb-NO')} m</b></span>
+          <input type="range" id="w-radius" min="300" max="2000" step="100" value="${W.radius}">
+        </label>
+        ${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap …</p>` : ''}
+        ${W.err ? `<p class="small" style="color:var(--bad)">${esc(W.err)} <button class="linkbtn" data-act="w-refetch">Prøv igjen</button></p>` : ''}
+        ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}
+      </div>
+      <div class="card stack">
+        <div class="row between"><span class="label">Grupper</span>
+          <label class="row small" for="w-count" style="gap:6px">Antall <select id="w-count">${[2,3,4,5,6,7,8].map(n=>`<option ${n===W.count?'selected':''}>${n}</option>`).join('')}</select></label></div>
+        ${W.names.slice(0,W.count).map((n,i)=>`<div class="row" style="flex-wrap:nowrap"><span class="team" style="--c:${COLORS[i].c}"><i></i></span><input type="text" id="w-g${i}" data-i="${i}" class="w-gname" value="${esc(n)}" maxlength="24" aria-label="Navn på gruppe ${i+1}"></div>`).join('')}
+      </div>
+      <div class="row">
+        <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating)?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
+        <button class="btn" data-act="w-cancel">Avbryt</button>
+      </div>
+    </div>
+    <div class="mapwrap" style="aspect-ratio:auto;height:min(78vh,720px)"><div class="mapslot" data-map="wiz"></div></div>
+  </div>`;
+}
+async function wizSearch(q){
+  const W = ST.wiz; W.q = q; if (!q.trim()) return;
+  W.searching = true; W.results = null; scheduleRender();
+  try {
+    const r = await fetch(`${NOMINATIM}?format=jsonv2&limit=6&accept-language=nb&countrycodes=no,se,dk&q=${encodeURIComponent(q)}`);
+    const js = await r.json();
+    W.results = js.map(x => ({name: x.name || x.display_name.split(',')[0], sub: x.display_name, lat:+x.lat, lon:+x.lon}));
+  } catch(e){ W.results = []; toast('Søket feilet. Du kan klikke på kartet i stedet.'); }
+  W.searching = false; scheduleRender();
+}
+async function wizSetCenter(lat, lon, place){
+  const W = ST.wiz;
+  W.center = {lat:+lat.toFixed(6), lon:+lon.toFixed(6)}; W.place = place || 'valgt punkt'; W.raw = null; W._cache = null; W.err='';
+  W.fetching = true; scheduleRender();
+  const my = W.center;
+  try {
+    const els = await fetchStreets(my.lat, my.lon);
+    if (ST.wiz !== W || W.center !== my) return;
+    const P = projector(my.lat, my.lon);
+    W.raw = els;
+    for (const w of W.raw) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
+  } catch(e){ if (ST.wiz===W) W.err = 'Kunne ikke hente gater akkurat nå.'; }
+  if (ST.wiz===W && W.center===my){ W.fetching = false; W._cache=null; scheduleRender(); }
+}
+async function fetchStreets(lat, lon){
+  const q = `[out:json][timeout:60];way["highway"]["name"](around:${FETCH_R},${lat},${lon});out geom tags;`;
+  let lastErr;
+  for (const url of OVERPASS){
+    try {
+      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const js = await r.json();
+      const skip = new Set(['footway','steps','platform','corridor','proposed','construction','bus_stop','elevator','raceway','abandoned','disused']);
+      return js.elements.filter(e => e.type==='way' && e.geometry && e.geometry.length>1 && e.tags && e.tags.name
+          && !skip.has(e.tags.highway) && e.tags.tunnel!=='yes' && !/tunnel(en)?$|\sbru$/i.test(e.tags.name))
+        .map(e => ({n: e.tags.name.trim(), ll: e.geometry.map(p => [p.lat, p.lon])}));
+    } catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('Overpass');
+}
+async function wizCreate(){
+  const W = ST.wiz, A = wizArea(); if (!A) return;
+  W.creating = true; scheduleRender();
+  try {
+    await initFirebase();
+    const P = A.P, r5 = x => Math.round(x*1e5)/1e5;
+    const streets = {v:1, c:[W.center.lat, W.center.lon], r:W.radius, s: A.list.map(rec => ({n:rec.n, l:Math.round(rec.len), g: rec.pieces.map(p => { const o=[]; for (let i=0;i<p.length;i+=2){ const [la,lo]=P.ll(p[i],p[i+1]); o.push(r5(la), r5(lo)); } return o; })}))};
+    const groups = {}, pins = {}, used = new Set();
+    for (let i=0;i<W.count;i++){
+      const id = 'g'+(i+1);
+      groups[id] = {name: (W.names[i]||('Lag '+COLORS[i].n)).trim().slice(0,24) || ('Lag '+COLORS[i].n), color: COLORS[i].c, o:i};
+      let p; do { p = rand(4, '0123456789'); } while (used.has(p)); used.add(p); pins[id] = p;
+    }
+    const teacherKey = rand(20, 'abcdefghijkmnpqrstuvwxyz23456789');
+    const name = W.name.trim() || ('Spill ' + new Date().toLocaleDateString('nb-NO'));
+    let code = null;
+    for (let attempt=0; attempt<6 && !code; attempt++){
+      const c = rand(6, CODE_ALPHA);
+      try {
+        await db.ref('games/'+c).set({
+          meta: {name, created: firebase.database.ServerValue.TIMESTAMP, center:{lat:W.center.lat, lon:W.center.lon}, place:W.place, radius:W.radius, phase:1, minutes:25, timer:{running:false, left:0, end:0}},
+          groups, streets: JSON.stringify(streets),
+          secret: {teacherKey, pins},
+          teachers: {[UID]: teacherKey}
+        });
+        code = c;
+      } catch(e){ if (attempt===5) throw e; }
+    }
+    const mine = (ls('erobre-mine')||[]).filter(m=>m.code!==code);
+    mine.unshift({code, key:teacherKey, name, created:Date.now()});
+    ls('erobre-mine', mine.slice(0,20));
+    ls('erobre-session', {role:'teacher', code, key:teacherKey});
+    ST.wiz = null;
+    startGame(code, 'teacher');
+    ST.tab = 'oppsett';
+    toast('Spillet er laget. Koden er ' + code + '.');
+  } catch(e){
+    console.warn(e); W.creating = false; toast('Kunne ikke lage spillet: ' + (e.message||e)); scheduleRender();
+  }
+}
+async function openTeacher(code, key){
+  try {
+    await initFirebase();
+    await db.ref(`games/${code}/teachers/${UID}`).set(key);
+    const mine = ls('erobre-mine')||[];
+    if (!mine.some(m=>m.code===code)){ const m = (await db.ref(`games/${code}/meta/name`).once('value')).val(); mine.unshift({code, key, name:m||code, created:Date.now()}); ls('erobre-mine', mine.slice(0,20)); }
+    ls('erobre-session', {role:'teacher', code, key});
+    history.replaceState(null, '', location.pathname + location.search);
+    startGame(code, 'teacher');
+  } catch(e){
+    console.warn(e); toast('Lærerlenken virker ikke. Spillet kan være slettet.');
+    const mine = (ls('erobre-mine')||[]).filter(m=>m.code!==code); ls('erobre-mine', mine);
+    ST.view='landing'; history.replaceState(null, '', location.pathname + location.search); scheduleRender();
+  }
+}
+
+/* ---------- teacher ---------- */
+function headerTeacher(D){
+  const tabs = [
+    ['oppsett','Oppsett',null], ['lop','Løp',1], ['bilder','Bilder',2], ['poeng','Poeng',3], ['duell','Duell',4], ['kart','Kart',null]
+  ];
+  return `<div class="top-inner">
+    <div class="brand">
+      <h1>Erobre <span>nabolaget</span></h1>
+      <span class="where">${esc(ST.meta?.name||'')}${ST.meta?.place?' · '+esc(ST.meta.place):''}</span>
+      <span class="right"><span class="small muted">Spillkode</span><span class="code-badge">${esc(ST.code)}</span><button class="btn small" data-act="leave">Lukk</button></span>
+    </div>
+    <div class="phasebar" role="group" aria-label="Fase for elevene"><span class="label" style="margin-right:4px">Elevene ser</span>${PHASES.map(p=>`<button data-act="phase" data-p="${p.n}" aria-pressed="${phase()===p.n}" title="${esc(p.s)}">${p.n<5?p.n+' ':''}${esc(p.t)}</button>`).join('')}</div>
+    <nav class="tabs" role="tablist">${tabs.map(([k,t,n])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${ST.tab===k}">${n?`<span class="n">${n}</span>`:''}${t}${k==='bilder'&&D.pendingAll?` <span class="badge">${D.pendingAll}</span>`:''}${k==='duell'&&D.contested.filter(c=>!c.won).length?` <span class="badge">${D.contested.filter(c=>!c.won).length}</span>`:''}</button>`).join('')}</nav>
+  </div>`;
+}
+function viewTeacher(D){
+  if (!ST.meta) return `<p class="row"><span class="spin"></span> Henter spillet …</p>`;
+  switch (ST.tab){
+    case 'oppsett': return tSetup(D);
+    case 'lop': return tRun(D);
+    case 'bilder': return tPhotos(D);
+    case 'poeng': return tScore(D);
+    case 'duell': return tDuels(D);
+    case 'kart': return mapTab(D, false);
+  }
+  return '';
+}
+function studentUrl(){ return location.origin + location.pathname + '#spill=' + ST.code; }
+function teacherUrl(){ const k = ST.secret?.teacherKey; return k ? location.origin + location.pathname + '#laerer=' + ST.code + '.' + k : ''; }
+function qrSvg(text){ try { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({cellSize:4, margin:2, scalable:true}); } catch(e){ return ''; } }
+function tSetup(D){
+  const gs = groupsSorted(), used = new Set(gs.map(g=>g.color)), pins = ST.secret?.pins || {};
+  const s = ST.streets;
+  return `
+  <div class="intro"><h2>Oppsett</h2><p>Vis spillkoden eller QR-koden til elevene. Hver gruppe logger inn med sin egen firesifrede kode.</p></div>
+  <div class="grid-2">
+    <div class="card stack">
+      <h3>Elevene blir med</h3>
+      <div class="row" style="align-items:flex-start;gap:18px">
+        <div class="qr" aria-label="QR-kode til spillet">${qrSvg(studentUrl())}</div>
+        <div class="stack" style="gap:6px;min-width:0;flex:1">
+          <div class="label">Spillkode</div>
+          <div class="bigcode">${esc(ST.code)}</div>
+          <p class="small muted" style="word-break:break-all">${esc(studentUrl())}</p>
+          <div><button class="btn small" data-act="copy" data-text="${esc(studentUrl())}">Kopier elevlenken</button></div>
+        </div>
+      </div>
+      <div class="label">Gruppekoder</div>
+      <div class="pins">${gs.map(g=>`<div class="pinc" style="--c:${esc(g.color)}"><span class="small">${esc(g.name)}</span><b class="num">${esc(pins[g.id]||'····')}</b></div>`).join('')}</div>
+    </div>
+    <div class="card stack">
+      <h3>Grupper</h3>
+      <div>${gs.map(g=>`
+        <div class="group-row">
+          <button class="swatch-btn" style="--c:${esc(g.color)}" data-act="swatch" data-g="${g.id}" aria-label="Velg farge for ${esc(g.name)}"></button>
+          <input type="text" id="gname-${g.id}" value="${esc(g.name)}" data-g="${g.id}" class="t-gname" maxlength="24" aria-label="Navn på gruppe">
+          ${ST.openSwatch===g.id ? `<div class="swatches">${COLORS.map(c=>`<button style="--c:${c.c}" data-act="color" data-g="${g.id}" data-c="${c.c}" aria-pressed="${g.color===c.c}" ${used.has(c.c)&&g.color!==c.c?'disabled':''} aria-label="${c.n}"></button>`).join('')}</div>`:''}
+        </div>`).join('')}</div>
+      <h3 style="margin-top:8px">Område</h3>
+      <p class="muted">${s ? `${s.s.length} gater og ${fmtKm(s.s.reduce((a,x)=>a+x.l,0))} km gate innenfor ${(+s.r).toLocaleString('nb-NO')} m fra ${esc(ST.meta.place||'startpunktet')}.` : 'Henter gatene …'} Området kan ikke endres etter at spillet er laget.</p>
+    </div>
+  </div>
+  <div class="card stack">
+    <h3>Øvelser i duellene</h3>
+    <p class="small muted">Kryss av for øvelsene dere kan gjennomføre. Øvelsen trekkes tilfeldig for hver duell.</p>
+    <div class="grid-2" style="gap:4px 20px">
+      ${CHALLENGES.map(c=>`<label class="check" for="ch-${c.id}"><input type="checkbox" id="ch-${c.id}" data-chal="${c.id}" ${offSet()[c.id]?'':'checked'}><span><b>${esc(c.t)}</b> <span class="muted small">· ${esc(c.kit)}${c.multi?'':' · bare 2 lag'}</span></span></label>`).join('')}
+    </div>
+  </div>
+  <div class="card stack">
+    <h3>Lærerlenke</h3>
+    <p class="small muted">Med denne lenken kan en annen lærer styre spillet, eller du kan åpne det på en annen maskin. Ikke del den med elevene.</p>
+    ${teacherUrl() ? `<div class="row"><button class="btn small" data-act="copy" data-text="${esc(teacherUrl())}">Kopier lærerlenken</button></div>` : ''}
+  </div>
+  <div class="card stack">
+    <h3>Rydd opp</h3>
+    <p class="small muted">Bildene ligger lagret til du sletter dem. Slett bildene når spillet er ferdig. Stillingen og gatene beholdes.</p>
+    ${ST.confirm==='imgs' ? `<div class="confirm"><span>Slette alle bildene for godt?</span><button class="btn small danger" data-act="del-imgs-yes">Ja, slett bildene</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div class="row"><button class="btn danger" data-act="confirm" data-c="imgs">Slett alle bildene</button></div>`}
+    ${ST.confirm==='game' ? `<div class="confirm"><span>Slette hele spillet med bilder, poeng og gruppekoder?</span><button class="btn small danger" data-act="del-game-yes">Ja, slett spillet</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div class="row"><button class="btn danger" data-act="confirm" data-c="game">Slett hele spillet</button></div>`}
+  </div>`;
+}
+function timerState(){ const t = ST.meta?.timer || {}; const full = (ST.meta?.minutes||25)*60000; if (t.running && t.end) return {running:true, left:Math.max(0, t.end-now()), full}; return {running:false, left: t.left ? t.left : full, full, fresh: !t.left}; }
+const fmtT = ms => { const s=Math.ceil(ms/1000); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); };
+function rulesHtml(){
+  return `<ul class="rules">
+    <li>Hold sammen i gruppa hele tiden.</li>
+    <li>Bruk fortau og gangfelt. Ingen skilt er verdt å løpe ut i vegen for.</li>
+    <li>Bare skilt innenfor sirkelen teller.</li>
+    <li>Ta bilde av skiltet, ikke av folk.</li>
+    <li>Vær tilbake ved start før tiden er ute.</li>
+  </ul>`;
+}
+function tRun(D){
+  const T = timerState(), m = ST.meta;
+  return `
+  <div class="intro"><h2>Fase 1 · Løp</h2><p>Vis kartet på storskjermen før dere går ut. Når du starter klokka, ser elevene nedtellingen på sine skjermer.</p></div>
+  <div class="grid-2">
+    <div class="card stack" style="align-items:flex-start">
+      <div class="label">Tid igjen</div>
+      <div class="timer ${T.left===0?'done':''}" data-timer>${fmtT(T.left)}</div>
+      <div class="row">
+        ${T.running ? `<button class="btn" data-act="t-pause">Pause</button>` : `<button class="btn primary" data-act="t-start">${T.fresh?'Start løpet':'Fortsett'}</button>`}
+        <button class="btn" data-act="t-reset">Nullstill</button>
+        <label class="row small" for="t-min" style="gap:6px">Minutter <select id="t-min">${[10,15,20,25,30,40,45,60].map(x=>`<option ${x===(m.minutes||25)?'selected':''}>${x}</option>`).join('')}</select></label>
+      </div>
+      <div class="label">Regler ute</div>
+      ${rulesHtml()}
+    </div>
+    <div class="card stack">
+      <div class="row between"><h3>Området</h3><span class="muted small">${ST.streets ? `${ST.streets.s.length} gater · ${fmtKm(ST.streets.s.reduce((a,x)=>a+x.l,0))} km` : ''}</span></div>
+      <div class="mapwrap"><div class="mapslot" data-map="area"></div></div>
+    </div>
+  </div>`;
+}
+function claimCard(gid, pid, c, opts={}){
+  const st = claimStatus(gid, pid, c), img = ST.imgs[pid];
+  const names = Object.values(c.s||{});
+  const g = groupById(gid);
+  const plates = names.map(n => `<span class="plate ${st==='rejected'?'off':''}">${esc(n)}</span>`).join(' ');
+  const badge = st==='ok' ? (ST.verdicts?.[gid]?.[pid]===true ? `<span class="pill good">Godkjent</span>` : `<span class="pill good">Lest automatisk</span>`) : st==='rejected' ? `<span class="pill bad">Avvist</span>` : `<span class="pill warn">Må sjekkes</span>`;
+  const imgHtml = c.m ? `<div class="noimg">Lagt inn av læreren</div>` : img===undefined ? `<div class="noimg"><span class="spin"></span></div>` : img===null ? `<div class="noimg">Bildet er slettet</div>` : `<img src="${esc(img)}" alt="Bilde fra ${esc(g?.name||'gruppa')}" loading="lazy">`;
+  return `<article class="photo ${st==='pending'?'flag':''}">
+    <div class="img">${imgHtml}</div>
+    <div class="body">
+      <div class="row between">${opts.showGroup?teamChip(g):''}${badge}</div>
+      <div class="found">${plates}</div>
+      ${c.o ? `<p class="small muted">Tekstleseren så: «${esc(String(c.o).replace(/\s+/g,' ').trim().slice(0,90))}»</p>` : (c.m ? '' : `<p class="small muted">Tekstleseren fant ingen tekst.</p>`)}
+      ${isTeacher() ? `<div class="foot">
+        <select data-fix="${gid}/${pid}" aria-label="Rett gate"><option value="">Rett gate …</option>${(ST.streets?.s||[]).map(s=>`<option>${esc(s.n)}</option>`).join('')}</select>
+        <span class="row" style="gap:6px">
+          ${st!=='ok' || ST.verdicts?.[gid]?.[pid]!==true ? `<button class="btn small good" data-act="v-ok" data-k="${gid}/${pid}">Godkjenn</button>`:''}
+          ${st!=='rejected' ? `<button class="btn small danger" data-act="v-no" data-k="${gid}/${pid}">Avvis</button>`:''}
+        </span></div>` : ''}
+    </div>
+  </article>`;
+}
+function tPhotos(D){
+  const gs = groupsSorted(), f = ST.bilderFilter;
+  const all = [];
+  for (const [gid, list] of Object.entries(ST.claims||{})) for (const [pid, c] of Object.entries(list||{})) if (groupById(gid)) all.push({gid, pid, c, st:claimStatus(gid,pid,c)});
+  all.sort((a,b)=>(b.c.t||0)-(a.c.t||0));
+  const shown = all.filter(x => f==='check' ? x.st==='pending' : f==='all' ? true : x.gid===f);
+  for (const x of shown) if (!x.c.m && ST.imgs[x.pid]===undefined) loadImg(x.gid, x.pid);
+  return `
+  <div class="intro"><h2>Fase 2 · Bildene</h2><p>Bildene kommer inn her mens gruppene laster opp. Når tekstleseren finner gatenavnet på skiltet, teller gata med en gang. De andre må du godkjenne eller avvise.</p></div>
+  <div class="gpick" role="group" aria-label="Filter">
+    <button data-act="bf" data-f="check" aria-pressed="${f==='check'}" style="--c:var(--warn)"><i></i>Må sjekkes <span class="cnt">${D.pendingAll}</span></button>
+    <button data-act="bf" data-f="all" aria-pressed="${f==='all'}"><i></i>Alle <span class="cnt">${all.length}</span></button>
+    ${gs.map(g=>`<button style="--c:${esc(g.color)}" data-act="bf" data-f="${g.id}" aria-pressed="${f===g.id}"><i></i>${esc(g.name)} <span class="cnt">${D.per[g.id].photos} bilder · ${D.per[g.id].streets.size} gater</span></button>`).join('')}
+  </div>
+  ${gs.some(g=>g.id===f) ? `<div class="card row between"><span>Legg til en gate for ${esc(groupById(f).name)} uten bilde</span><select id="t-manual" data-g="${f}"><option value="">Velg gate …</option>${(ST.streets?.s||[]).filter(s=>!D.per[f].streets.has(s.n)).map(s=>`<option>${esc(s.n)}</option>`).join('')}</select></div>` : ''}
+  ${shown.length ? `<div class="photos">${shown.map(x=>claimCard(x.gid, x.pid, x.c, {showGroup: f==='check'||f==='all'})).join('')}</div>` : `<div class="empty">${f==='check' ? 'Ingen bilder venter på deg.' : 'Ingen bilder her ennå.'}</div>`}`;
+}
+const imgLoading = new Set();
+function loadImg(gid, pid){
+  if (imgLoading.has(pid)) return; imgLoading.add(pid);
+  gref(`imgs/${gid}/${pid}`).once('value').then(s => { ST.imgs[pid] = s.val(); scheduleRender(); }).catch(() => { ST.imgs[pid] = null; scheduleRender(); });
+}
+function tScore(D){
+  const rank3 = Object.values(D.score).sort((a,b)=>b.phase3-a.phase3);
+  return `
+  <div class="intro"><h2>Fase 3 · Poeng</h2><p>Gater bare én gruppe har funnet, er erobret. Gater flere grupper har funnet, står på vent til duellene er avgjort. Poengene er gatenes lengde i meter innenfor området.</p></div>
+  ${D.pendingAll ? `<div class="notice">${D.pendingAll} bilde${D.pendingAll>1?'r':''} venter fortsatt på godkjenning. <button class="linkbtn" data-act="goto" data-t="bilder">Sjekk bildene</button></div>` : ''}
+  <div class="teams">${rank3.map(s=>teamCard(s, D, true)).join('')}</div>
+  <p class="small muted">Bonus eller straff legges til summen, for eksempel −100 m per minutt en gruppe kom for sent tilbake.</p>
+  ${D.contested.length?`<div class="row"><button class="btn primary" data-act="goto" data-t="duell">Til duellene (${D.contested.length}) →</button></div>`:''}`;
+}
+function teamCard(s, D, editable){
+  const g = s.g;
+  const uniq = [...D.owners].filter(([n,o])=>o.how==='unik'&&o.g===g.id).sort((a,b)=>b[1].len-a[1].len);
+  const strid = D.contested.filter(c=>c.gs.includes(g.id));
+  return `<div class="tcard" style="--c:${esc(g.color)}">
+    <header><h3>${esc(g.name)}</h3><span class="num" style="font-weight:700">${s.found} funnet</span></header>
+    <div class="nums"><div><div class="v num">${fmtKm(s.phase3)}</div><div class="label">km erobret</div></div><div><div class="v num">${s.uniqN}</div><div class="label">unike gater</div></div></div>
+    ${uniq.length?`<ul>${uniq.map(([n,o])=>`<li><span>${esc(n)}</span><span class="m">${fmtM(o.len)}</span></li>`).join('')}</ul>`:`<p class="sub muted small">Ingen unike gater.</p>`}
+    ${strid.length?`<div class="sub label">Til duell</div><ul>${strid.map(c=>`<li><span>${esc(c.n)}</span><span class="m">${c.won?(c.d.winner===g.id?'vunnet':'tapt'):'mot '+c.gs.filter(x=>x!==g.id).map(x=>esc(groupById(x)?.name||'')).join(', ')}</span></li>`).join('')}</ul>`:''}
+    ${editable ? `<div class="adj"><label for="adj-${g.id}">Bonus/straff</label><input type="text" inputmode="numeric" id="adj-${g.id}" data-adj="${g.id}" value="${s.adj||''}" placeholder="0"> <span class="muted">meter</span></div>` : (s.adj ? `<div class="adj muted">Bonus/straff: ${s.adj>0?'+':''}${s.adj} m</div>` : '')}
+  </div>`;
+}
+function challengeFor(c){
+  const off = offSet(), n = c.gs.length;
+  let pool = CHALLENGES.filter(x=>!off[x.id] && (n<=2 || x.multi));
+  if (!pool.length) pool = CHALLENGES.filter(x=>n<=2||x.multi);
+  return (c.d.challenge && pool.find(x=>x.id===c.d.challenge)) || pool[hash(c.n) % pool.length];
+}
+function tDuels(D, readOnly=false){
+  const done = D.contested.filter(c=>c.won).length, tot = D.contested.length;
+  const myG = ST.me?.gid;
+  const list = readOnly && myG ? [...D.contested].sort((a,b)=>(b.gs.includes(myG)-a.gs.includes(myG))) : D.contested;
+  return `
+  <div class="intro"><h2>${readOnly?'Dueller':'Fase 4 · Duell'}</h2><p>${readOnly ? 'Gater flere grupper har funnet, avgjøres med en kort øvelse i gymsalen.' : 'Gater som flere grupper har funnet, avgjøres med en kort øvelse. Den lengste gata står øverst. Trykk på vinneren, så skifter gata farge på kartet.'}</p></div>
+  ${tot ? `<div class="stack" style="gap:6px"><div class="row between"><b>${done} av ${tot} dueller avgjort</b><span class="muted small">${fmtM(D.contested.filter(c=>!c.won).reduce((a,c)=>a+c.len,0))} står fortsatt på spill</span></div><div class="progress"><b style="width:${done/tot*100}%"></b></div></div>` : `<div class="empty">Ingen dueller ennå. De dukker opp når to grupper har funnet samme gate.</div>`}
+  <div class="duels">${list.map(c=>{
+    const ch = challengeFor(c), w = c.won ? groupById(c.d.winner) : null;
+    return `<div class="duel ${c.won?'decided':''}">
+      <div class="stake">
+        <span class="plate big">${esc(c.n)}</span>
+        <div><span class="meters num">${fmtM(c.len)}</span> <span class="muted">står på spill</span></div>
+        <div class="row">${c.gs.map(id=>teamChip(groupById(id))).join('<span class="muted">mot</span>')}</div>
+      </div>
+      <div class="stack">
+        ${w ? `<div class="stack" style="gap:6px"><div class="label">Erobret av</div><div class="row">${teamChip(w)}<span class="muted small">i ${esc(ch.t.toLowerCase())}</span></div>${readOnly?'':`<div><button class="linkbtn" data-act="d-undo" data-n="${esc(c.n)}">Angre</button></div>`}</div>`
+        : `<div class="ch"><div class="label">Øvelse</div><h3>${esc(ch.t)}</h3><p>${esc(ch.how)}</p><p class="small muted">Utstyr: ${esc(ch.kit)}</p>${readOnly?'':`<div><button class="linkbtn" data-act="d-new" data-n="${esc(c.n)}" data-cur="${ch.id}">Trekk en annen øvelse</button></div>`}</div>
+           ${readOnly?'':`<div class="stack" style="gap:6px"><div class="label">Hvem vant?</div><div class="winners">${c.gs.map(id=>{const g=groupById(id);return `<button style="--c:${esc(g.color)}" data-act="d-win" data-n="${esc(c.n)}" data-g="${id}" data-ch="${ch.id}"><i></i>${esc(g.name)}</button>`;}).join('')}</div></div>`}`}
+      </div>
+    </div>`;}).join('')}</div>
+  ${!readOnly && tot && done===tot ? `<div class="row"><button class="btn primary" data-act="goto" data-t="kart">Se hvem som vant →</button></div>`:''}`;
+}
+function mapTab(D, student){
+  const max = Math.max(1, ...D.ranking.map(s=>s.total));
+  const pending = D.contested.filter(c=>!c.won).length;
+  const gs = groupsSorted();
+  return `
+  <div class="intro"><h2>Hvem eier ${esc(ST.meta?.place ? ST.meta.place.split(',')[0] : 'nabolaget')}?</h2><p>Gatene får fargen til gruppa som har erobret dem. Stripete gater venter på duell. Flest meter vinner.</p></div>
+  <div class="mapgrid">
+    <div class="stack" style="gap:6px">
+      <div class="mapwrap" id="mw-game"><div class="mapslot" data-map="game"></div></div>
+      <div class="row between"><label class="row small" for="labels" style="gap:6px"><input type="checkbox" id="labels" ${ST.labels?'checked':''}> Vis gatenavn</label>${student?'':`<button class="btn small" data-act="fullscreen">Fullskjerm</button>`}</div>
+    </div>
+    <div class="board">
+      <div class="label">${pending ? `Stilling · ${pending} duell${pending>1?'er':''} gjenstår` : 'Stilling'}</div>
+      ${D.ranking.map((s,i)=>`<div class="rank ${student&&s.g.id===ST.me?.gid?'me':''}" style="--c:${esc(s.g.color)}">
+        <div class="pos num">${i+1}</div>
+        <div><div class="team" style="--c:${esc(s.g.color)}"><i></i>${esc(s.g.name)}</div><div class="meta">${s.n} gater${s.pendingN?` · ${s.pendingN} i duell`:''}${s.adj?` · ${s.adj>0?'+':''}${s.adj} m justert`:''}</div></div>
+        <div class="km num">${fmtKm(s.total)}<span class="muted" style="font-size:15px"> km</span></div>
+        <div class="bar"><b style="width:${Math.max(0,s.total)/max*100}%"></b></div>
+      </div>`).join('')}
+      <div class="card legend">
+        <span><svg viewBox="0 0 40 10"><line x1="2" y1="5" x2="38" y2="5" stroke="${esc(gs[0]?.color||'#888')}" stroke-width="5" stroke-linecap="round"/></svg>Erobret</span>
+        <span><svg viewBox="0 0 40 10"><line x1="2" y1="5" x2="38" y2="5" stroke="${esc(gs[0]?.color||'#888')}" stroke-width="5" stroke-dasharray="6 6"/><line x1="2" y1="5" x2="38" y2="5" stroke="${esc((gs[1]||gs[0])?.color||'#888')}" stroke-width="5" stroke-dasharray="6 6" stroke-dashoffset="6"/></svg>Venter på duell</span>
+        <span><svg viewBox="0 0 40 10"><line x1="2" y1="5" x2="38" y2="5" stroke="#6E7A74" stroke-width="3" stroke-linecap="round"/></svg>Ikke funnet av noen</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- student ---------- */
+function headerStudent(){
+  const g = groupById(ST.me?.gid);
+  return `<div class="top-inner solo"><div class="brand">
+    <h1>Erobre <span>nabolaget</span></h1>
+    <span class="right">${teamChip(g)}<span class="code-badge">${esc(ST.code)}</span><button class="btn small" data-act="leave">Logg ut</button></span>
+  </div></div>`;
+}
+function viewStudent(D){
+  if (!ST.meta) return `<p class="row"><span class="spin"></span> Henter spillet …</p>`;
+  const gid = ST.me?.gid, g = groupById(gid), ph = phase(), T = timerState();
+  if (!g) return `<div class="empty">Gruppa di finnes ikke lenger. <button class="btn" data-act="leave">Logg ut</button></div>`;
+  const timerCard = (T.running || (T.left>0 && !T.fresh) || ph===1) ? `<div class="card stack" style="align-items:flex-start"><div class="label">Tid igjen</div><div class="timer ${T.left===0?'done':''}" data-timer>${fmtT(T.left)}</div></div>` : '';
+  let body = '';
+  if (ph <= 2){
+    const mine = Object.entries(ST.claims?.[gid]||{}).map(([pid,c])=>({pid,c,st:claimStatus(gid,pid,c)})).sort((a,b)=>(b.c.t||0)-(a.c.t||0));
+    const streets = D.per[gid].streets;
+    body = `
+    ${ph===1 ? `<div class="grid-2">${timerCard}<div class="card stack"><div class="label">Regler ute</div>${rulesHtml()}</div></div>
+      <div class="card stack"><div class="row between"><h3>Her kan dere løpe</h3><span class="muted small">${ST.streets?`${ST.streets.s.length} gater innenfor sirkelen`:''}</span></div><div class="mapwrap"><div class="mapslot" data-map="area"></div></div></div>` : timerCard}
+    <div class="intro"><h2>Last opp bildene</h2><p>Velg bildene av gatenavnskiltene. Tekstleseren prøver å finne gatenavnet. Sjekk at riktig gate er valgt, og trykk «Send inn».</p></div>
+    <label class="upload-btn" for="s-files"><h3>Velg bilder</h3><span class="muted">Du kan velge mange på en gang</span></label>
+    ${ST.local.length ? `<div class="row between"><b>${ST.local.filter(i=>i.status==='ready').length} klare til å sendes</b><span class="row">${ST.local.some(i=>i.status==='ready'&&i.sel)?`<button class="btn primary" data-act="s-send-all">Send inn alle som har gate</button>`:''}</span></div><div class="photos">${ST.local.map(localCard).join('')}</div>` : ''}
+    <div class="card stack">
+      <h3>${esc(g.name)} har ${streets.size} gate${streets.size===1?'':'r'}</h3>
+      ${mine.length ? `<div class="found">${mine.map(x=>`<span class="row" style="gap:4px">${Object.values(x.c.s||{}).map(n=>`<span class="plate ${x.st==='rejected'?'off':''}">${esc(n)}</span>`).join('')}${x.st==='pending'?'<span class="pill warn">Læreren sjekker</span>':x.st==='rejected'?'<span class="pill bad">Avvist</span>':''}</span>`).join('')}</div>` : `<p class="muted">Ingen gater sendt inn ennå.</p>`}
+    </div>`;
+  } else {
+    body = `
+    ${ph===3 ? `<div class="notice">Opplastingen er stengt. Læreren teller poengene.</div>` : ''}
+    ${ph>=4 && D.contested.length ? tDuels(D, true) : ''}
+    ${mapTab(D, true)}
+    ${ph>=3 ? `<div class="teams">${Object.values(D.score).filter(s=>s.g.id===gid).map(s=>teamCard(s, D, false)).join('')}</div>` : ''}`;
+  }
+  return body;
+}
+function localCard(it){
+  const opts = (ST.streets?.s||[]).map(s=>`<option ${s.n===it.sel?'selected':''}>${esc(s.n)}</option>`).join('');
+  let status = '';
+  if (it.status==='reading') status = `<span class="row small"><span class="spin"></span> ${esc(it.msg||'Leser skiltet …')}</span>`;
+  else if (it.status==='sending') status = `<span class="row small"><span class="spin"></span> Sender …</span>`;
+  else if (it.status==='error') status = `<span class="pill bad">${esc(it.msg||'Noe gikk galt')}</span>`;
+  else if (it.status==='ready') status = it.match ? `<span class="pill good">Fant ${esc(it.match)}</span>` : `<span class="pill warn">Fant ikke navnet. Velg gata selv.</span>`;
+  return `<article class="photo">
+    <div class="img"><img src="${esc(it.url)}" alt="Bilde som skal sendes inn"></div>
+    <div class="body">
+      <div class="row">${status}</div>
+      ${it.status==='ready'||it.status==='error'||(it.status==='reading'&&it.canvas) ? `<select data-sel="${it.id}" aria-label="Hvilken gate?"><option value="">Velg gate …</option>${opts}</select>
+      <div class="foot"><button class="btn primary small" data-act="s-send" data-id="${it.id}" ${it.sel?'':'disabled'}>Send inn</button><button class="btn small" data-act="s-drop" data-id="${it.id}">Forkast</button></div>` : ''}
+    </div>
+  </article>`;
+}
+
+/* ---------- OCR ---------- */
+let ocrWorker = null, ocrLoading = null;
+async function getOCR(){
+  if (ocrWorker) return ocrWorker;
+  if (!ocrLoading) ocrLoading = (async () => {
+    if (!window.Tesseract) await loadScript(TESS_URL);
+    const w = await Tesseract.createWorker('nor');
+    ocrWorker = w; return w;
+  })().catch(e => { ocrLoading = null; throw e; });
+  return ocrLoading;
+}
+function bestStreet(text){
+  const t = key(text); if (t.length < 3) return null;
+  let best = null;
+  for (const s of (ST.streets?.s||[])){
+    const k = key(s.n); if (k.length < 3) continue;
+    const d = subLev(k, t), tol = Math.max(1, Math.floor(k.length*0.22));
+    if (d > tol) continue;
+    const score = d / k.length;
+    if (!best || score < best.score - 1e-9 || (Math.abs(score-best.score)<1e-9 && k.length > best.len)) best = {n:s.n, score, len:k.length};
+  }
+  return best;
+}
+async function fileToCanvas(file, max){
+  const url = URL.createObjectURL(file);
+  const img = new Image(); img.src = url;
+  await img.decode();
+  const s = Math.min(1, max/Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*s); c.height = Math.round(img.naturalHeight*s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return {canvas:c, url};
+}
+function cropCanvas(c, fx, fy){ const k = document.createElement('canvas'); const sw = Math.round(c.width*fx), sh = Math.round(c.height*fy); k.width = sw; k.height = sh; k.getContext('2d').drawImage(c, (c.width-sw)/2, (c.height-sh)/2, sw, sh, 0, 0, sw, sh); return k; }
+function prepCanvas(src, invert){
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const x = c.getContext('2d'); x.drawImage(src, 0, 0);
+  const d = x.getImageData(0,0,c.width,c.height), a = d.data;
+  let lo=255, hi=0; const g = new Uint8ClampedArray(a.length/4);
+  for (let i=0,j=0;i<a.length;i+=4,j++){ const v = (a[i]*0.299 + a[i+1]*0.587 + a[i+2]*0.114)|0; g[j]=v; if (v<lo) lo=v; if (v>hi) hi=v; }
+  const span = Math.max(1, hi-lo);
+  for (let i=0,j=0;i<a.length;i+=4,j++){ let v = (g[j]-lo)*255/span; if (invert) v = 255-v; a[i]=a[i+1]=a[i+2]=v; }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+async function handleFiles(files){
+  const items = [];
+  for (const f of files){
+    const it = {id: 'l'+Math.random().toString(36).slice(2,9), status:'reading', msg:'Åpner bildet …', sel:'', match:null, ocr:'', url:''};
+    try { const {canvas, url} = await fileToCanvas(f, 1600); it.canvas = canvas; it.url = url; }
+    catch(e){ it.status='error'; it.msg='Bildet kunne ikke åpnes. Bruk JPG eller PNG.'; }
+    ST.local.push(it); items.push(it);
+  }
+  scheduleRender();
+  for (const it of items){
+    if (it.status!=='reading') continue;
+    try {
+      it.msg = ocrWorker ? 'Leser skiltet …' : 'Laster tekstleseren. Første gang tar det litt tid …'; scheduleRender();
+      const w = await getOCR();
+      it.msg = 'Leser skiltet …'; scheduleRender();
+      const passes = [
+        ['6', () => prepCanvas(it.canvas, false)],
+        ['3', () => prepCanvas(it.canvas, false)],
+        ['3', () => prepCanvas(cropCanvas(it.canvas, .6, .35), false)],
+        ['6', () => prepCanvas(it.canvas, true)],
+        ['6', () => prepCanvas(cropCanvas(it.canvas, .8, .45), false)],
+        ['11', () => prepCanvas(it.canvas, false)]
+      ];
+      let text = '', m = null;
+      for (const [psm, mk] of passes){
+        if (!ST.local.includes(it)) break;
+        await w.setParameters({tessedit_pageseg_mode: psm});
+        const t = ((await w.recognize(mk())).data.text || '').trim();
+        const mm = bestStreet(t);
+        if (mm){ m = mm; text = t; break; }
+        if (t.replace(/[^A-Za-zÆØÅæøå]/g,'').length > text.replace(/[^A-Za-zÆØÅæøå]/g,'').length) text = t;
+      }
+      if (!ST.local.includes(it) || it.status!=='reading') continue;
+      it.ocr = text.replace(/\s+/g,' ').trim().slice(0,240);
+      it.match = m ? m.n : null; if (!it.sel) it.sel = it.match || '';
+      it.status = 'ready';
+    } catch(e){ console.warn(e); if (it.status==='reading'){ it.status='ready'; it.match=null; it.msg=''; } }
+    scheduleRender();
+  }
+}
+async function sendItem(it){
+  if (!it.sel) return;
+  const gid = ST.me?.gid;
+  it.status='sending'; scheduleRender();
+  try {
+    const c = it.canvas, s = Math.min(1, 900/Math.max(c.width, c.height));
+    const t = document.createElement('canvas'); t.width=Math.round(c.width*s); t.height=Math.round(c.height*s);
+    t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+    let data = t.toDataURL('image/jpeg', 0.62);
+    if (data.length > 280000) data = t.toDataURL('image/jpeg', 0.4);
+    const pid = gref('claims/'+gid).push().key;
+    await gref(`imgs/${gid}/${pid}`).set(data);
+    await gref(`claims/${gid}/${pid}`).set({s:[it.sel], v: !!(it.match && it.match===it.sel), o: it.ocr || '', t: firebase.database.ServerValue.TIMESTAMP});
+    const already = derive().per[gid].streets.has(it.sel);
+    ST.local = ST.local.filter(x=>x!==it); URL.revokeObjectURL(it.url);
+    toast(it.sel + ' er sendt inn.' + (already && it.match===it.sel ? '' : ''));
+  } catch(e){
+    console.warn(e); it.status='error'; it.msg = phase()>2 ? 'Opplastingen er stengt.' : 'Kunne ikke sende. Sjekk nettet og prøv igjen.';
+  }
+  scheduleRender();
+}
+
+/* ---------- Leaflet maps ---------- */
+const MAPS = {};
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere © <a href="https://carto.com/attributions">CARTO</a>';
+function ensureMap(k){
+  if (MAPS[k]) return MAPS[k];
+  const el = document.createElement('div'); el.className = 'lmap'; el.style.position = 'absolute';
+  const M = {el, map:null, layer:null, fitted:false, sig:''};
+  MAPS[k] = M;
+  if (!window.L){ el.innerHTML = '<div class="empty">Kartet kunne ikke lastes.</div>'; return M; }
+  M.map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:true, zoomSnap:0.25});
+  L.tileLayer(TILE_URL, {maxZoom:19, subdomains:'abcd', attribution:TILE_ATTR}).addTo(M.map);
+  M.layer = L.layerGroup().addTo(M.map);
+  if (k==='wiz'){
+    M.map.setView([60.47, 8.47], 5);
+    M.map.on('click', e => wizSetCenter(e.latlng.lat, e.latlng.lng, 'valgt punkt'));
+  }
+  return M;
+}
+function mountMaps(){
+  document.querySelectorAll('.mapslot').forEach(slot => {
+    const k = slot.dataset.map, M = ensureMap(k);
+    slot.replaceWith(M.el);
+    if (!M.map) return;
+    M.map.invalidateSize(false);
+    drawMap(k, M);
+    requestAnimationFrame(() => { M.map.invalidateSize(false); if (!M.fitted || M.fitPending) { M.sig=''; drawMap(k, M); } });
+  });
+}
+function midPoint(g){
+  let best = null, bl = 0;
+  for (const p of g){ let l=0; for (let i=0;i<p.length-2;i+=2) l += Math.hypot(p[i+2]-p[i], (p[i+3]-p[i+1])*0.5); if (l>bl){ bl=l; best=p; } }
+  if (!best) return null;
+  const n = best.length/2, i = Math.floor(n/2)*2;
+  return [best[i], best[i+1]];
+}
+function drawMap(k, M){
+  if (k==='wiz') return drawWizMap(M);
+  const s = ST.streets; if (!s) return;
+  const D = k==='game' ? derive() : null;
+  const sig = JSON.stringify([k, ST.labels, D ? [...D.owners].map(([n,o])=>[n,o.g,o.gs]) : 0, groupsSorted().map(g=>g.color)]);
+  if (sig === M.sig) return;
+  M.sig = sig;
+  M.layer.clearLayers();
+  const [clat, clon] = s.c;
+  L.circle([clat, clon], {radius:s.r, color:'#1B2320', weight:2, dashArray:'8 6', fill:false, interactive:false}).addTo(M.layer);
+  for (const st of s.s){
+    const lines = st.g.map(p => { const o=[]; for (let i=0;i<p.length;i+=2) o.push([p[i],p[i+1]]); return o; });
+    const o = D ? D.owners.get(st.n) : null;
+    if (!o){
+      L.polyline(lines, {color: k==='area' ? '#C4472F' : '#6E7A74', weight: k==='area'?5:4, opacity:.85}).addTo(M.layer);
+    } else if (o.g){
+      const g = groupById(o.g);
+      L.polyline(lines, {color:'#fff', weight:10, opacity:.9}).addTo(M.layer);
+      L.polyline(lines, {color:g.color, weight:7, opacity:1}).addTo(M.layer);
+    } else {
+      const n = o.gs.length, seg = 12;
+      L.polyline(lines, {color:'#fff', weight:10, opacity:.9}).addTo(M.layer);
+      o.gs.forEach((gid,i) => L.polyline(lines, {color:groupById(gid).color, weight:7, dashArray:`${seg} ${seg*(n-1)}`, dashOffset:String(i*seg), lineCap:'butt'}).addTo(M.layer));
+    }
+    const hit = L.polyline(lines, {color:'#000', opacity:0, weight:18}).addTo(M.layer);
+    const who = !D ? '' : !o ? 'Ikke funnet av noen' : o.g ? `${esc(groupById(o.g).name)} · ${o.how==='unik'?'unik':'vant duellen'}` : `Duell: ${o.gs.map(id=>esc(groupById(id).name)).join(' mot ')}`;
+    hit.bindPopup(`<b>${esc(st.n)}</b><br>${fmtM(st.l)}${who?'<br>'+who:''}`);
+    if (ST.labels || k==='area'){
+      const mp = midPoint(st.g);
+      if (mp && st.l > 180) L.tooltip({permanent:true, direction:'center', className:'lbl-tip', interactive:false}).setLatLng(mp).setContent(esc(st.n)).addTo(M.layer);
+    }
+  }
+  L.circleMarker([clat, clon], {radius:7, color:'#fff', weight:3, fillColor:'#C4472F', fillOpacity:1}).bindTooltip(esc(ST.meta?.place ? ST.meta.place.split(',')[0] : 'Start'), {permanent:true, direction:'top', offset:[0,-8], className:'school-tip'}).addTo(M.layer);
+  if (!M.fitted && M.el.clientWidth > 0 && M.el.clientHeight > 0){ M.map.fitBounds(L.latLng(clat, clon).toBounds(s.r*2.1), {padding:[12,12]}); M.fitted = true; }
+}
+function drawWizMap(M){
+  const W = ST.wiz; if (!W) return;
+  const A = wizArea();
+  const sig = JSON.stringify([W.center, W.radius, !!A, A?A.list.length:0]);
+  if (sig === M.sig) return; M.sig = sig;
+  M.layer.clearLayers();
+  if (!W.center) return;
+  const c = [W.center.lat, W.center.lon];
+  const mk = L.marker(c, {draggable:true}).addTo(M.layer);
+  mk.on('dragend', () => { const p = mk.getLatLng(); wizSetCenter(p.lat, p.lng, W.place && W.place!=='valgt punkt' ? W.place + ' (flyttet)' : 'valgt punkt'); });
+  L.circle(c, {radius:W.radius, color:'#1B2320', weight:2, dashArray:'8 6', fillOpacity:.04, interactive:false}).addTo(M.layer);
+  if (A){
+    for (const rec of A.list){
+      const lines = rec.pieces.map(p => { const o=[]; for (let i=0;i<p.length;i+=2) o.push(A.P.ll(p[i],p[i+1])); return o; });
+      L.polyline(lines, {color:'#C4472F', weight:4, opacity:.85}).bindTooltip(esc(rec.n)).addTo(M.layer);
+    }
+  }
+  const key2 = W.center.lat+','+W.center.lon+','+W.radius;
+  if (M.lastFit !== key2 && M.el.clientWidth > 0 && M.el.clientHeight > 0){ M.map.fitBounds(L.latLng(c).toBounds(W.radius*2.1), {padding:[16,16]}); M.lastFit = key2; }
+}
+
+/* ---------- after render hooks ---------- */
+function afterRender(){
+  const fc = $('#f-code');
+  if (fc) fc.addEventListener('submit', e => { e.preventDefault(); document.activeElement?.blur(); ST.join.code = $('#code-in').value; openJoin($('#code-in').value); });
+  const fs = $('#f-search');
+  if (fs) fs.addEventListener('submit', e => { e.preventDefault(); document.activeElement?.blur(); wizSearch($('#w-q').value); });
+}
+
+/* ---------- actions ---------- */
+const teacherWrite = (path, val) => gref(path).set(val).catch(e => { console.warn(e); toast('Kunne ikke lagre: ' + (e.message||e)); });
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (tab){ ST.tab = tab.dataset.tab; ls('erobre-tab-'+ST.code, ST.tab); scheduleRender(); window.scrollTo({top:0}); return; }
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const a = t.dataset.act;
+  switch (a){
+    case 'create': ST.wiz = newWizard(); ST.view='create'; scheduleRender(); break;
+    case 'open-mine': { const m = (ls('erobre-mine')||[]).find(x=>x.code===t.dataset.code); if (m) openTeacher(m.code, m.key); break; }
+    case 'w-cancel': ST.wiz=null; ST.view='landing'; scheduleRender(); break;
+    case 'w-pick': { const r = ST.wiz.results[+t.dataset.i]; ST.wiz.results=null; wizSetCenter(r.lat, r.lon, r.sub.split(',').slice(0,2).join(',')); if (!ST.wiz.name) ST.wiz.name=''; break; }
+    case 'w-refetch': if (ST.wiz?.center) wizSetCenter(ST.wiz.center.lat, ST.wiz.center.lon, ST.wiz.place); break;
+    case 'w-create': wizCreate(); break;
+    case 'j-cancel': ST.view='landing'; scheduleRender(); break;
+    case 'j-group': ST.join.gid = t.dataset.g; ST.join.pin=''; scheduleRender(); break;
+    case 'j-regroup': ST.join.gid = null; ST.join.pin=''; scheduleRender(); break;
+    case 'j-key': if (ST.join.pin.length<4){ ST.join.pin += t.dataset.k; scheduleRender(); if (ST.join.pin.length===4) submitPin(); } break;
+    case 'j-back': ST.join.pin = ST.join.pin.slice(0,-1); scheduleRender(); break;
+    case 'j-clear': ST.join.pin = ''; scheduleRender(); break;
+    case 'leave': leaveGame(); break;
+    case 'copy': copy(t.dataset.text); break;
+    case 'phase': teacherWrite('meta/phase', +t.dataset.p); break;
+    case 'swatch': ST.openSwatch = ST.openSwatch===t.dataset.g ? null : t.dataset.g; scheduleRender(); break;
+    case 'color': ST.openSwatch=null; teacherWrite(`groups/${t.dataset.g}/color`, t.dataset.c); break;
+    case 'confirm': ST.confirm = t.dataset.c; scheduleRender(); break;
+    case 'confirm-no': ST.confirm = null; scheduleRender(); break;
+    case 'del-imgs-yes': ST.confirm=null; gref('imgs').remove().then(()=>{ ST.imgs={}; imgLoading.clear(); toast('Bildene er slettet.'); scheduleRender(); }).catch(err=>toast('Kunne ikke slette: '+err.message)); break;
+    case 'del-game-yes': { const code = ST.code; ST.confirm=null; gref().remove().then(()=>{ ls('erobre-mine', (ls('erobre-mine')||[]).filter(m=>m.code!==code)); toast('Spillet er slettet.'); leaveGame(); }).catch(err=>toast('Kunne ikke slette: '+err.message)); break; }
+    case 't-start': { const T = timerState(); teacherWrite('meta/timer', {running:true, end: now() + T.left, left: T.left}); if (phase()!==1) {} break; }
+    case 't-pause': { const T = timerState(); teacherWrite('meta/timer', {running:false, end:0, left: Math.max(1, T.left)}); break; }
+    case 't-reset': teacherWrite('meta/timer', {running:false, end:0, left:0}); break;
+    case 'bf': ST.bilderFilter = t.dataset.f; scheduleRender(); break;
+    case 'v-ok': teacherWrite('verdicts/'+t.dataset.k, true); break;
+    case 'v-no': teacherWrite('verdicts/'+t.dataset.k, false); break;
+    case 'd-win': teacherWrite('duels/'+slug(t.dataset.n), {street:t.dataset.n, winner:t.dataset.g, challenge:t.dataset.ch, at: firebase.database.ServerValue.TIMESTAMP}).then(()=>toast(`${t.dataset.n} er erobret av ${groupById(t.dataset.g)?.name||''}.`)); break;
+    case 'd-undo': teacherWrite('duels/'+slug(t.dataset.n)+'/winner', null); break;
+    case 'd-new': { const n=t.dataset.n, D=derive(), c=D.contested.find(x=>x.n===n); if (!c) break; const off=offSet(); const pool=CHALLENGES.filter(x=>!off[x.id]&&(c.gs.length<=2||x.multi)&&x.id!==t.dataset.cur); if (!pool.length) break; teacherWrite('duels/'+slug(n)+'/challenge', pool[Math.floor(Math.random()*pool.length)].id); teacherWrite('duels/'+slug(n)+'/street', n); break; }
+    case 'goto': ST.tab = t.dataset.t; ls('erobre-tab-'+ST.code, ST.tab); scheduleRender(); window.scrollTo({top:0}); break;
+    case 'fullscreen': { const el = $('#mw-game'); if (el?.requestFullscreen) el.requestFullscreen().then(()=>setTimeout(()=>MAPS.game?.map?.invalidateSize(),200)).catch(()=>{}); break; }
+    case 's-send': { const it = ST.local.find(x=>x.id===t.dataset.id); if (it) sendItem(it); break; }
+    case 's-send-all': (async()=>{ for (const it of ST.local.filter(x=>x.status==='ready'&&x.sel)) await sendItem(it); })(); break;
+    case 's-drop': { const it = ST.local.find(x=>x.id===t.dataset.id); if (it){ ST.local = ST.local.filter(x=>x!==it); URL.revokeObjectURL(it.url); scheduleRender(); } break; }
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id==='w-name'){ ST.wiz.name = t.value; return; }
+  if (t.classList.contains('w-gname')){ ST.wiz.names[+t.dataset.i] = t.value; return; }
+  if (t.id==='w-count'){ ST.wiz.count = +t.value; while (ST.wiz.names.length < ST.wiz.count) ST.wiz.names.push('Lag '+COLORS[ST.wiz.names.length].n); scheduleRender(); return; }
+  if (t.id==='w-radius'){ ST.wiz.radius = +t.value; ST.wiz._cache=null; scheduleRender(); return; }
+  if (t.classList.contains('t-gname')){ const v = t.value.trim().slice(0,24); if (v) teacherWrite(`groups/${t.dataset.g}/name`, v); return; }
+  if (t.dataset.chal){ teacherWrite('meta/off/'+t.dataset.chal, t.checked ? null : true); return; }
+  if (t.id==='t-min'){ teacherWrite('meta/minutes', +t.value); if (!timerState().running) teacherWrite('meta/timer', {running:false,end:0,left:0}); return; }
+  if (t.dataset.adj){ const v = parseInt(String(t.value).replace(/[−–]/g,'-').replace(/[^\d-]/g,''),10); teacherWrite('meta/adjust/'+t.dataset.adj, isNaN(v)||!v ? null : v); return; }
+  if (t.dataset.fix){ const n = t.value; if (!n) return; const [gid,pid] = t.dataset.fix.split('/'); teacherWrite(`claims/${gid}/${pid}/s`, [n]); teacherWrite(`verdicts/${gid}/${pid}`, true); return; }
+  if (t.id==='t-manual'){ const n = t.value; if (!n) return; const gid = t.dataset.g; const pid = gref('claims/'+gid).push().key; teacherWrite(`claims/${gid}/${pid}`, {s:[n], v:true, m:true, o:'', t:firebase.database.ServerValue.TIMESTAMP}); toast(n+' er lagt til.'); return; }
+  if (t.dataset.sel){ const it = ST.local.find(x=>x.id===t.dataset.sel); if (it){ it.sel = t.value; scheduleRender(); } return; }
+  if (t.id==='labels'){ ST.labels = t.checked; scheduleRender(); return; }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id==='w-radius'){ const l = $('#w-rlabel'); if (l) l.textContent = (+t.value).toLocaleString('nb-NO')+' m'; }
+  if (t.id==='w-q' && ST.wiz) ST.wiz.q = t.value;
+  if (t.id==='w-name' && ST.wiz) ST.wiz.name = t.value;
+  if (t.classList?.contains('w-gname') && ST.wiz) ST.wiz.names[+t.dataset.i] = t.value;
+  if (t.id==='code-in'){ t.value = t.value.toUpperCase(); ST.join.code = t.value; }
+});
+document.addEventListener('focusout', e => { if (e.target.tagName==='INPUT') setTimeout(scheduleRender, 0); });
+document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.tagName==='INPUT' && e.target.type==='text' && !e.target.closest('form')) e.target.blur(); });
+document.addEventListener('fullscreenchange', () => setTimeout(()=>MAPS.game?.map?.invalidateSize(), 150));
+
+$('#s-files').addEventListener('change', e => { const sf = e.target, files = [...sf.files]; sf.value = ''; if (ST.view==='student' && files.length) handleFiles(files); });
+
+/* ---------- timer tick ---------- */
+let lastTimerLeft = null;
+setInterval(() => {
+  const els = document.querySelectorAll('[data-timer]'); if (!els.length || !ST.meta) return;
+  const T = timerState();
+  els.forEach(el => { el.textContent = fmtT(T.left); el.classList.toggle('done', T.left===0); });
+  if (T.running && T.left===0 && lastTimerLeft && lastTimerLeft>0) beep();
+  lastTimerLeft = T.running ? T.left : null;
+}, 250);
+function beep(){ try { const a = new (window.AudioContext||window.webkitAudioContext)(); [0,0.35,0.7].forEach(t=>{ const o=a.createOscillator(), g=a.createGain(); o.frequency.value=880; o.connect(g); g.connect(a.destination); g.gain.setValueAtTime(0.25,a.currentTime+t); g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+t+0.3); o.start(a.currentTime+t); o.stop(a.currentTime+t+0.3); }); } catch(e){} }
+
+/* ---------- boot ---------- */
+(async function boot(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!fbConfigured()){ ST.view='landing'; render(); return; }
+  try {
+    if (h.startsWith('laerer=')){ const [code, k] = h.slice(7).split('.'); ST.view='boot'; render(); await openTeacher(code.toUpperCase(), k); return; }
+    if (h.startsWith('spill=')){
+      const code = h.slice(6).toUpperCase(); const sess = ls('erobre-session');
+      if (sess && sess.role==='student' && sess.code===code){ await initFirebase(); ST.me={gid:sess.gid}; startGame(code, 'student'); return; }
+      ST.join.code = code; await openJoin(code); return;
+    }
+    const sess = ls('erobre-session');
+    if (sess){
+      await initFirebase();
+      if (sess.role==='teacher'){ await openTeacher(sess.code, sess.key); return; }
+      if (sess.role==='student'){
+        const m = (await db.ref(`games/${sess.code}/members/${UID}`).once('value')).val();
+        if (m && m.g){ ST.me={gid:m.g}; startGame(sess.code, 'student'); return; }
+        ls('erobre-session', null);
+      }
+    }
+  } catch(e){ console.warn(e); toast('Kunne ikke koble til. Sjekk nettet.'); }
+  ST.view = 'landing'; render();
+})();
+</script>
+</body>
+</html>
