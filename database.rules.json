@@ -1,0 +1,69 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "games": {
+      "$code": {
+        ".write": "auth != null && ((!data.exists() && newData.child('secret/teacherKey').isString() && newData.child('teachers/' + auth.uid).val() === newData.child('secret/teacherKey').val()) || (!newData.exists() && root.child('games/' + $code + '/teachers/' + auth.uid).exists()))",
+        "meta": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "groups": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "streets": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "duels": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "verdicts": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "secret": {
+          ".read": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()"
+        },
+        "teachers": {
+          ".read": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && newData.val() === root.child('games/' + $code + '/secret/teacherKey').val()"
+          }
+        },
+        "members": {
+          ".read": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": "auth != null && auth.uid === $uid && newData.child('g').isString() && newData.child('pin').val() === root.child('games/' + $code + '/secret/pins/' + newData.child('g').val()).val()"
+          }
+        },
+        "claims": {
+          ".read": "auth != null",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          "$gid": {
+            "$pid": {
+              ".write": "auth != null && root.child('games/' + $code + '/members/' + auth.uid + '/g').val() === $gid && root.child('games/' + $code + '/meta/phase').val() <= 2",
+              ".validate": "!newData.exists() || (newData.hasChildren(['s', 't']) && newData.child('s').hasChildren())"
+            }
+          }
+        },
+        "imgs": {
+          ".read": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          ".write": "root.child('games/' + $code + '/teachers/' + auth.uid).exists()",
+          "$gid": {
+            ".read": "auth != null && root.child('games/' + $code + '/members/' + auth.uid + '/g').val() === $gid",
+            "$pid": {
+              ".write": "auth != null && root.child('games/' + $code + '/members/' + auth.uid + '/g').val() === $gid && root.child('games/' + $code + '/meta/phase').val() <= 2",
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length < 300000)"
+            }
+          }
+        }
+      }
+    }
+  }
+}
