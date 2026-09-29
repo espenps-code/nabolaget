@@ -526,8 +526,27 @@ function derive(){
 let renderQueued = false;
 function scheduleRender(){ if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
 function editing(){ const a=document.activeElement; return a && (a.tagName==='INPUT' && /^(text|search)$/.test(a.type)) && a.dataset.live!=='1'; }
+let ptrHold = false, ptrPending = false, ptrTimer = 0;
+function releaseHold(){ clearTimeout(ptrTimer); if (!ptrHold) return; ptrHold = false; if (ptrPending){ ptrPending = false; scheduleRender(); } }
+// Ikke bytt ut DOM-en mens en knapp holdes nede: da forsvinner knappen før klikket registreres.
+document.addEventListener('pointerdown', () => { ptrHold = true; clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 4000); }, true);
+document.addEventListener('pointerup', () => { clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 400); }, true);
+document.addEventListener('pointercancel', () => { clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 0); }, true);
+document.addEventListener('click', () => setTimeout(releaseHold, 0), true);
+function patchParts(html){
+  const tpl = document.createElement('template'); tpl.innerHTML = html;
+  tpl.content.querySelectorAll('[data-patch]').forEach(n => {
+    const cur = document.querySelector(`[data-patch="${n.dataset.patch}"]`);
+    if (cur && !cur.contains(document.activeElement)) cur.replaceWith(n);
+  });
+}
 function render(){
-  if (editing()) return;
+  if (ptrHold){ ptrPending = true; return; }
+  if (editing()){
+    // Mens læreren skriver i et felt: oppdater bare statusfeltene, så lasting og søk ikke ser ut til å henge.
+    if (ST.view==='create' && ST.wiz){ patchParts(viewCreate()); const M = MAPS.wiz; if (M && M.map) drawMap('wiz', M); }
+    return;
+  }
   const main = $('#main'), top = $('#top');
   const y = window.scrollY;
   let html = '', head = '';
@@ -678,25 +697,25 @@ function viewCreate(){
           <input type="search" id="w-q" placeholder="Søk etter skolen eller et sted" value="${esc(W.q)}">
           <button class="btn" type="submit">Søk</button>
         </form>
-        ${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
-        ${W.results ? (W.results.length ? `<ul class="results">${W.results.map((r,i)=>`<li><button data-act="w-pick" data-i="${i}"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.sub)}</span></button></li>`).join('')}</ul>` : `<p class="small muted">Fant ingenting. Prøv et annet søk, eller klikk på kartet.</p>`) : ''}
-        <p class="small muted">${W.center ? `Start og mål: <b>${esc(W.place||'valgt punkt')}</b>. Klikk på kartet eller dra markøren for å flytte.` : 'Du kan også klikke rett på kartet.'}</p>
+        <div data-patch="w-results" class="stack">${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
+        ${W.results ? (W.results.length ? `<ul class="results">${W.results.map((r,i)=>`<li><button type="button" data-act="w-pick" data-i="${i}"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.sub)}</span></button></li>`).join('')}</ul>` : `<p class="small muted">Fant ingenting. Prøv et annet søk, eller klikk på kartet.</p>`) : ''}</div>
+        <p data-patch="w-place" class="small muted">${W.center ? `Start og mål: <b>${esc(W.place||'valgt punkt')}</b>. Klikk på kartet eller dra markøren for å flytte.` : 'Du kan også klikke rett på kartet.'}</p>
       </div>
       <div class="card stack">
         <label class="stack" for="w-radius" style="gap:4px">
           <span class="row between"><span class="label">Radius</span><b class="num" id="w-rlabel">${W.radius.toLocaleString('nb-NO')} m</b></span>
           <input type="range" id="w-radius" min="300" max="2000" step="100" value="${W.radius}">
         </label>
-        ${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap … <span class="muted" data-elapsed>${Math.round((Date.now()-(W.fetchStart||Date.now()))/1000)} s</span></p>` : ''}
+        <div data-patch="w-fetch" class="stack">${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap … <span class="muted" data-elapsed>${Math.round((Date.now()-(W.fetchStart||Date.now()))/1000)} s</span></p>` : ''}
         ${W.err ? `<p class="small" style="color:var(--bad)">${esc(W.err)} <button class="linkbtn" data-act="w-refetch">Prøv igjen</button></p>` : ''}
-        ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}
+        ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}</div>
       </div>
       <div class="card stack">
         <div class="row between"><span class="label">Grupper</span>
           <label class="row small" for="w-count" style="gap:6px">Antall <select id="w-count">${[2,3,4,5,6,7,8].map(n=>`<option ${n===W.count?'selected':''}>${n}</option>`).join('')}</select></label></div>
         ${W.names.slice(0,W.count).map((n,i)=>`<div class="row" style="flex-wrap:nowrap"><span class="team" style="--c:${COLORS[i].c}"><i></i></span><input type="text" id="w-g${i}" data-i="${i}" class="w-gname" value="${esc(n)}" maxlength="24" aria-label="Navn på gruppe ${i+1}"></div>`).join('')}
       </div>
-      <div class="row">
+      <div class="row" data-patch="w-actions">
         <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating && !W.fetching && W.radius <= (W.fetchedR||0))?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
         <button class="btn" data-act="w-cancel">Avbryt</button>
       </div>
@@ -704,15 +723,22 @@ function viewCreate(){
     <div class="mapwrap" style="aspect-ratio:auto;height:min(78vh,720px)"><div class="mapslot" data-map="wiz"></div></div>
   </div>`;
 }
+let wizSearchSeq = 0;
 async function wizSearch(q){
-  const W = ST.wiz; W.q = q; if (!q.trim()) return;
+  const W = ST.wiz; if (!W) return; W.q = q; if (!q.trim()) return;
+  const my = ++wizSearchSeq;
   W.searching = true; W.results = null; scheduleRender();
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000);
+  let res = [];
   try {
-    const r = await fetch(`${NOMINATIM}?format=jsonv2&limit=6&accept-language=nb&countrycodes=no,se,dk&q=${encodeURIComponent(q)}`);
+    const r = await fetch(`${NOMINATIM}?format=jsonv2&limit=6&accept-language=nb&countrycodes=no,se,dk&q=${encodeURIComponent(q)}`, {signal: ac.signal});
+    if (!r.ok) throw new Error('HTTP '+r.status);
     const js = await r.json();
-    W.results = js.map(x => ({name: x.name || x.display_name.split(',')[0], sub: x.display_name, lat:+x.lat, lon:+x.lon}));
-  } catch(e){ W.results = []; toast('Søket feilet. Du kan klikke på kartet i stedet.'); }
-  W.searching = false; scheduleRender();
+    res = js.map(x => ({name: x.name || x.display_name.split(',')[0], sub: x.display_name, lat:+x.lat, lon:+x.lon}));
+  } catch(e){ if (my===wizSearchSeq) toast('Søket feilet. Prøv igjen, eller klikk på kartet i stedet.'); }
+  clearTimeout(to);
+  if (my !== wizSearchSeq || ST.wiz !== W) return;
+  W.results = res; W.searching = false; scheduleRender();
 }
 async function wizSetCenter(lat, lon, place){
   const W = ST.wiz;
@@ -726,46 +752,65 @@ function wizMaybeRefetch(){
   if (W.radius <= (W.fetchedR||0)) return;
   clearTimeout(wizFetchTimer); wizFetchTimer = setTimeout(wizFetch, 500);
 }
+let wizFetchSeq = 0;
 async function wizFetch(){
   const W = ST.wiz; if (!W || !W.center) return;
-  const my = W.center, R = W.radius + FETCH_MARGIN;
+  clearTimeout(wizFetchTimer);
+  const id = ++wizFetchSeq, my = W.center, R = W.radius + FETCH_MARGIN;
+  const current = () => ST.wiz === W && id === wizFetchSeq;
   W.fetching = true; W.err = ''; W.fetchStart = Date.now(); scheduleRender();
   try {
     const els = await fetchStreets(my.lat, my.lon, R);
-    if (ST.wiz !== W || W.center !== my) return;
-    const P = projector(my.lat, my.lon);
-    for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
-    W.raw = els; W.fetchedR = R; W._cache = null;
-  } catch(e){ if (ST.wiz===W && W.center===my) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
-  if (ST.wiz===W && W.center===my){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
+    if (current()){
+      const P = projector(my.lat, my.lon);
+      for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
+      W.raw = els; W.fetchedR = R; W._cache = null;
+    }
+  } catch(e){ if (current()) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
+  finally {
+    if (current()){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
+  }
 }
 async function fetchStreets(lat, lon, R){
   const dLat = R/110540, dLon = R/(111320*Math.cos(lat*Math.PI/180));
   const bb = [lat-dLat, lon-dLon, lat+dLat, lon+dLon].map(x=>x.toFixed(6)).join(',');
   const types = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|cycleway|path';
   const q = `[out:json][timeout:25];way["highway"~"^(${types})$"]["name"]["tunnel"!="yes"](around:${Math.round(R)},${lat},${lon});out geom(${bb});`;
-  let lastErr;
-  for (const url of OVERPASS){
-    const ac = new AbortController(), to = setTimeout(()=>ac.abort(), 30000);
-    try {
-      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      const js = await r.json();
-      clearTimeout(to);
-      const out = [];
-      for (const e of js.elements){
-        if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
-        let cur = [];
-        for (const p of e.geometry){
-          if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
-          else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
-        }
-        if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
+  const parse = js => {
+    const out = [];
+    for (const e of js.elements || []){
+      if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
+      let cur = [];
+      for (const p of e.geometry){
+        if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
+        else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
       }
-      return out;
-    } catch(e){ clearTimeout(to); lastErr = e; }
-  }
-  throw lastErr || new Error('Overpass');
+      if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
+    }
+    return out;
+  };
+  const tryOne = async (url, ac) => {
+    const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const js = await r.json();
+    // Overpass svarer av og til 200 med en feilmelding og halve data. Da prøver vi neste server.
+    if (js.remark && /runtime error|timed out|out of memory/i.test(js.remark)) throw new Error(js.remark);
+    return parse(js);
+  };
+  // Start neste server hvis den forrige ikke har svart på 5 sekunder, og bruk første svar som kommer.
+  return new Promise((resolve, reject) => {
+    const ctrls = [], timers = [];
+    let done = false, started = 0, failed = 0;
+    const finish = (ok, val) => { if (done) return; done = true; timers.forEach(clearTimeout); ctrls.forEach(c => c.abort()); ok ? resolve(val) : reject(val); };
+    const start = () => {
+      if (done || started >= OVERPASS.length) return;
+      const ac = new AbortController(); ctrls.push(ac);
+      tryOne(OVERPASS[started++], ac).then(v => finish(true, v), e => { if (++failed >= OVERPASS.length) finish(false, e); else start(); });
+    };
+    start();
+    for (let i=1; i<OVERPASS.length; i++) timers.push(setTimeout(start, i*5000));
+    timers.push(setTimeout(() => { const e = new Error('Tidsavbrudd'); e.name = 'AbortError'; finish(false, e); }, 45000));
+  });
 }
 async function wizCreate(){
   const W = ST.wiz, A = wizArea(); if (!A) return;
