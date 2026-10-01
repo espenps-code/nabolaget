@@ -296,19 +296,22 @@ const COLORS = [
   {c:'#8B4FD6', n:'Lilla'}, {c:'#0E9C9C', n:'Turkis'}, {c:'#DB4D98', n:'Rosa'}, {c:'#EE7A1A', n:'Oransje'}
 ];
 const CHALLENGES = [
-  {id:'ssp', t:'Stein, saks, papir', how:'Én fra hvert lag. Best av tre. Er dere flere enn to lag, spiller vinnerne videre til bare én står igjen.', kit:'Ikke noe utstyr', multi:true},
-  {id:'sprint', t:'Sprint til kjeglen', how:'Én fra hvert lag står på streken. Første som tar på kjeglen 20 meter unna, vinner.', kit:'1 kjegle, 1 strek', multi:true},
-  {id:'flamingo', t:'Flamingo', how:'Én fra hvert lag står på ett bein med armene i kors. Den som står lengst uten å sette ned foten, vinner.', kit:'Ikke noe utstyr', multi:true},
-  {id:'lengde', t:'Stille lengde', how:'Én fra hvert lag hopper fra stående. Lengst hopp, målt ved hælen, vinner. Ett hopp hver.', kit:'Teip eller målebånd', multi:true},
-  {id:'naermest', t:'Nærmest kjeglen', how:'Én fra hvert lag kaster en sandsekk mot en kjegle 8 meter unna. Sekken som ligger nærmest, vinner.', kit:'1 kjegle, sandsekker', multi:true},
-  {id:'planke', t:'Planken', how:'Én fra hvert lag holder planken. Den som holder lengst med rett rygg og knærne i lufta, vinner.', kit:'Matter', multi:true},
-  {id:'veggsitt', t:'Veggsitting', how:'Én fra hvert lag sitter mot veggen med 90 grader i knærne. Den som reiser seg sist, vinner.', kit:'En vegg', multi:true},
-  {id:'krabbe', t:'Krabbegang', how:'Én fra hvert lag går krabbegang 10 meter. Første med hendene over streken, vinner.', kit:'2 streker', multi:true},
-  {id:'kurv', t:'Første i kurven', how:'Én fra hvert lag skyter fra straffekastlinja, ett skudd hver per runde. Første runde der bare én treffer, avgjør.', kit:'Basketkurv, ball', multi:true},
-  {id:'kjegle', t:'Velt kjeglen', how:'Én fra hvert lag triller en ball mot en kjegle 6 meter unna, ett forsøk hver per runde. Første runde der bare én velter den, avgjør.', kit:'1 kjegle, 1 ball', multi:true},
-  {id:'hink', t:'Hinkestafett', how:'Hele laget. Én og én hinker på ett bein rundt kjeglen og tilbake. Laget som blir ferdig først, vinner.', kit:'Kjegler', multi:true},
-  {id:'tau', t:'Tautrekking', how:'Hele laget mot hele laget. Laget som drar midtmerket over sin egen strek, vinner.', kit:'Tau', multi:false}
+  {id:'reaksjon', t:'Ta ballen', how:'Én fra hvert lag ligger på magen med hendene på streken. En ball ligger 5 meter unna. Læreren roper «Nå!». Første som holder ballen, vinner.', kit:'1 ball, 1 strek', multi:true, sek:10},
+  {id:'sprint', t:'Sprint til kjeglen', how:'Én fra hvert lag står på streken. Første som tar på kjeglen 20 meter unna, vinner.', kit:'1 kjegle, 1 strek', multi:true, sek:15},
+  {id:'baklengs', t:'Baklengs sprint', how:'Én fra hvert lag løper baklengs 15 meter. Første over streken vinner.', kit:'2 streker', multi:true, sek:15},
+  {id:'krabbe', t:'Krabbegang', how:'Én fra hvert lag går krabbegang 10 meter. Første med hendene over streken, vinner.', kit:'2 streker', multi:true, sek:20},
+  {id:'rundt', t:'Rundt kjeglen', how:'Én fra hvert lag løper til kjeglen 10 meter unna, rundt den tre ganger og tilbake. Første over streken vinner.', kit:'1 kjegle per lag', multi:true, sek:20},
+  {id:'flamingo', t:'Blind flamingo', how:'Én fra hvert lag står på ett bein med armene i kors og øynene lukket. Den som står lengst uten å sette ned foten eller åpne øynene, vinner.', kit:'Ikke noe utstyr', multi:true, sek:20},
+  {id:'lengde', t:'Stille lengde', how:'Én fra hvert lag hopper fra stående. Lengst hopp, målt ved hælen, vinner. Ett hopp hver.', kit:'Teip', multi:true, sek:30},
+  {id:'hink', t:'Lengste hink', how:'Én fra hvert lag tar ett hink på ett bein fra streken. Lengst hink, målt ved hælen, vinner.', kit:'Teip', multi:true, sek:20},
+  {id:'naermest', t:'Nærmest kjeglen', how:'Én fra hvert lag kaster en sandsekk mot en kjegle 8 meter unna. Sekken som ligger nærmest, vinner.', kit:'1 kjegle, sandsekker', multi:true, sek:30},
+  {id:'ballbak', t:'Ballen bakover', how:'Hele laget står på rekke. Ballen sendes bakover, annenhver gang over hodet og mellom beina. Første lag der den bakerste løfter ballen i været, vinner.', kit:'1 ball per lag', multi:true, sek:30},
+  {id:'ssp', t:'Stein, saks, papir', how:'Én fra hvert lag. Best av tre. Er dere flere enn to lag, spiller alle samtidig, og de som taper en runde, går ut.', kit:'Ikke noe utstyr', multi:true, sek:30},
+  {id:'kurv', t:'Tre i kurven', how:'Én fra hvert lag skyter tre skudd fra straffekastlinja. Flest treff vinner. Står det likt, skyter de ett skudd hver til bare én treffer.', kit:'Basketkurv, ball', multi:true, sek:45},
+  {id:'kjegle', t:'Velt kjeglen', how:'Én fra hvert lag triller en ball mot en kjegle 6 meter unna, tre forsøk hver. Flest veltede kjegler vinner. Står det likt, avgjør stein, saks, papir.', kit:'1 kjegle, 1 ball', multi:true, sek:45},
+  {id:'tau', t:'Tautrekking', how:'Hele laget mot hele laget. Laget som drar midtmerket over sin egen strek, vinner. Står det stille i 30 sekunder, vinner laget som er nærmest.', kit:'Tau', multi:false, sek:45}
 ];
+const RANDOM_CH = {id:'random', t:'Tilfeldig trekning', how:'', kit:'', sek:5};
 const PHASES = [
   {n:1, t:'Løp', s:'Elevene ser kartet og tiden'},
   {n:2, t:'Last opp', s:'Elevene laster opp bilder'},
@@ -526,27 +529,8 @@ function derive(){
 let renderQueued = false;
 function scheduleRender(){ if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
 function editing(){ const a=document.activeElement; return a && (a.tagName==='INPUT' && /^(text|search)$/.test(a.type)) && a.dataset.live!=='1'; }
-let ptrHold = false, ptrPending = false, ptrTimer = 0;
-function releaseHold(){ clearTimeout(ptrTimer); if (!ptrHold) return; ptrHold = false; if (ptrPending){ ptrPending = false; scheduleRender(); } }
-// Ikke bytt ut DOM-en mens en knapp holdes nede: da forsvinner knappen før klikket registreres.
-document.addEventListener('pointerdown', () => { ptrHold = true; clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 4000); }, true);
-document.addEventListener('pointerup', () => { clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 400); }, true);
-document.addEventListener('pointercancel', () => { clearTimeout(ptrTimer); ptrTimer = setTimeout(releaseHold, 0); }, true);
-document.addEventListener('click', () => setTimeout(releaseHold, 0), true);
-function patchParts(html){
-  const tpl = document.createElement('template'); tpl.innerHTML = html;
-  tpl.content.querySelectorAll('[data-patch]').forEach(n => {
-    const cur = document.querySelector(`[data-patch="${n.dataset.patch}"]`);
-    if (cur && !cur.contains(document.activeElement)) cur.replaceWith(n);
-  });
-}
 function render(){
-  if (ptrHold){ ptrPending = true; return; }
-  if (editing()){
-    // Mens læreren skriver i et felt: oppdater bare statusfeltene, så lasting og søk ikke ser ut til å henge.
-    if (ST.view==='create' && ST.wiz){ patchParts(viewCreate()); const M = MAPS.wiz; if (M && M.map) drawMap('wiz', M); }
-    return;
-  }
+  if (editing()) return;
   const main = $('#main'), top = $('#top');
   const y = window.scrollY;
   let html = '', head = '';
@@ -697,25 +681,25 @@ function viewCreate(){
           <input type="search" id="w-q" placeholder="Søk etter skolen eller et sted" value="${esc(W.q)}">
           <button class="btn" type="submit">Søk</button>
         </form>
-        <div data-patch="w-results" class="stack">${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
-        ${W.results ? (W.results.length ? `<ul class="results">${W.results.map((r,i)=>`<li><button type="button" data-act="w-pick" data-i="${i}"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.sub)}</span></button></li>`).join('')}</ul>` : `<p class="small muted">Fant ingenting. Prøv et annet søk, eller klikk på kartet.</p>`) : ''}</div>
-        <p data-patch="w-place" class="small muted">${W.center ? `Start og mål: <b>${esc(W.place||'valgt punkt')}</b>. Klikk på kartet eller dra markøren for å flytte.` : 'Du kan også klikke rett på kartet.'}</p>
+        ${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
+        ${W.results ? (W.results.length ? `<ul class="results">${W.results.map((r,i)=>`<li><button data-act="w-pick" data-i="${i}"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.sub)}</span></button></li>`).join('')}</ul>` : `<p class="small muted">Fant ingenting. Prøv et annet søk, eller klikk på kartet.</p>`) : ''}
+        <p class="small muted">${W.center ? `Start og mål: <b>${esc(W.place||'valgt punkt')}</b>. Klikk på kartet eller dra markøren for å flytte.` : 'Du kan også klikke rett på kartet.'}</p>
       </div>
       <div class="card stack">
         <label class="stack" for="w-radius" style="gap:4px">
           <span class="row between"><span class="label">Radius</span><b class="num" id="w-rlabel">${W.radius.toLocaleString('nb-NO')} m</b></span>
           <input type="range" id="w-radius" min="300" max="2000" step="100" value="${W.radius}">
         </label>
-        <div data-patch="w-fetch" class="stack">${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap … <span class="muted" data-elapsed>${Math.round((Date.now()-(W.fetchStart||Date.now()))/1000)} s</span></p>` : ''}
+        ${W.fetching ? `<p class="row small"><span class="spin"></span> Henter gater fra OpenStreetMap … <span class="muted" data-elapsed>${Math.round((Date.now()-(W.fetchStart||Date.now()))/1000)} s</span></p>` : ''}
         ${W.err ? `<p class="small" style="color:var(--bad)">${esc(W.err)} <button class="linkbtn" data-act="w-refetch">Prøv igjen</button></p>` : ''}
-        ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}</div>
+        ${A ? `<div class="stat-line"><div class="stat"><div class="v num">${A.list.length}</div><div class="label">gater</div></div><div class="stat"><div class="v num">${fmtKm(A.total)}</div><div class="label">km gate</div></div></div>` : ''}
       </div>
       <div class="card stack">
         <div class="row between"><span class="label">Grupper</span>
           <label class="row small" for="w-count" style="gap:6px">Antall <select id="w-count">${[2,3,4,5,6,7,8].map(n=>`<option ${n===W.count?'selected':''}>${n}</option>`).join('')}</select></label></div>
         ${W.names.slice(0,W.count).map((n,i)=>`<div class="row" style="flex-wrap:nowrap"><span class="team" style="--c:${COLORS[i].c}"><i></i></span><input type="text" id="w-g${i}" data-i="${i}" class="w-gname" value="${esc(n)}" maxlength="24" aria-label="Navn på gruppe ${i+1}"></div>`).join('')}
       </div>
-      <div class="row" data-patch="w-actions">
+      <div class="row">
         <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating && !W.fetching && W.radius <= (W.fetchedR||0))?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
         <button class="btn" data-act="w-cancel">Avbryt</button>
       </div>
@@ -723,22 +707,15 @@ function viewCreate(){
     <div class="mapwrap" style="aspect-ratio:auto;height:min(78vh,720px)"><div class="mapslot" data-map="wiz"></div></div>
   </div>`;
 }
-let wizSearchSeq = 0;
 async function wizSearch(q){
-  const W = ST.wiz; if (!W) return; W.q = q; if (!q.trim()) return;
-  const my = ++wizSearchSeq;
+  const W = ST.wiz; W.q = q; if (!q.trim()) return;
   W.searching = true; W.results = null; scheduleRender();
-  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000);
-  let res = [];
   try {
-    const r = await fetch(`${NOMINATIM}?format=jsonv2&limit=6&accept-language=nb&countrycodes=no,se,dk&q=${encodeURIComponent(q)}`, {signal: ac.signal});
-    if (!r.ok) throw new Error('HTTP '+r.status);
+    const r = await fetch(`${NOMINATIM}?format=jsonv2&limit=6&accept-language=nb&countrycodes=no,se,dk&q=${encodeURIComponent(q)}`);
     const js = await r.json();
-    res = js.map(x => ({name: x.name || x.display_name.split(',')[0], sub: x.display_name, lat:+x.lat, lon:+x.lon}));
-  } catch(e){ if (my===wizSearchSeq) toast('Søket feilet. Prøv igjen, eller klikk på kartet i stedet.'); }
-  clearTimeout(to);
-  if (my !== wizSearchSeq || ST.wiz !== W) return;
-  W.results = res; W.searching = false; scheduleRender();
+    W.results = js.map(x => ({name: x.name || x.display_name.split(',')[0], sub: x.display_name, lat:+x.lat, lon:+x.lon}));
+  } catch(e){ W.results = []; toast('Søket feilet. Du kan klikke på kartet i stedet.'); }
+  W.searching = false; scheduleRender();
 }
 async function wizSetCenter(lat, lon, place){
   const W = ST.wiz;
@@ -752,65 +729,46 @@ function wizMaybeRefetch(){
   if (W.radius <= (W.fetchedR||0)) return;
   clearTimeout(wizFetchTimer); wizFetchTimer = setTimeout(wizFetch, 500);
 }
-let wizFetchSeq = 0;
 async function wizFetch(){
   const W = ST.wiz; if (!W || !W.center) return;
-  clearTimeout(wizFetchTimer);
-  const id = ++wizFetchSeq, my = W.center, R = W.radius + FETCH_MARGIN;
-  const current = () => ST.wiz === W && id === wizFetchSeq;
+  const my = W.center, R = W.radius + FETCH_MARGIN;
   W.fetching = true; W.err = ''; W.fetchStart = Date.now(); scheduleRender();
   try {
     const els = await fetchStreets(my.lat, my.lon, R);
-    if (current()){
-      const P = projector(my.lat, my.lon);
-      for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
-      W.raw = els; W.fetchedR = R; W._cache = null;
-    }
-  } catch(e){ if (current()) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
-  finally {
-    if (current()){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
-  }
+    if (ST.wiz !== W || W.center !== my) return;
+    const P = projector(my.lat, my.lon);
+    for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
+    W.raw = els; W.fetchedR = R; W._cache = null;
+  } catch(e){ if (ST.wiz===W && W.center===my) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
+  if (ST.wiz===W && W.center===my){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
 }
 async function fetchStreets(lat, lon, R){
   const dLat = R/110540, dLon = R/(111320*Math.cos(lat*Math.PI/180));
   const bb = [lat-dLat, lon-dLon, lat+dLat, lon+dLon].map(x=>x.toFixed(6)).join(',');
   const types = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|cycleway|path';
   const q = `[out:json][timeout:25];way["highway"~"^(${types})$"]["name"]["tunnel"!="yes"](around:${Math.round(R)},${lat},${lon});out geom(${bb});`;
-  const parse = js => {
-    const out = [];
-    for (const e of js.elements || []){
-      if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
-      let cur = [];
-      for (const p of e.geometry){
-        if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
-        else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
+  let lastErr;
+  for (const url of OVERPASS){
+    const ac = new AbortController(), to = setTimeout(()=>ac.abort(), 30000);
+    try {
+      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const js = await r.json();
+      clearTimeout(to);
+      const out = [];
+      for (const e of js.elements){
+        if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
+        let cur = [];
+        for (const p of e.geometry){
+          if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
+          else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
+        }
+        if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
       }
-      if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
-    }
-    return out;
-  };
-  const tryOne = async (url, ac) => {
-    const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
-    if (!r.ok) throw new Error('HTTP '+r.status);
-    const js = await r.json();
-    // Overpass svarer av og til 200 med en feilmelding og halve data. Da prøver vi neste server.
-    if (js.remark && /runtime error|timed out|out of memory/i.test(js.remark)) throw new Error(js.remark);
-    return parse(js);
-  };
-  // Start neste server hvis den forrige ikke har svart på 5 sekunder, og bruk første svar som kommer.
-  return new Promise((resolve, reject) => {
-    const ctrls = [], timers = [];
-    let done = false, started = 0, failed = 0;
-    const finish = (ok, val) => { if (done) return; done = true; timers.forEach(clearTimeout); ctrls.forEach(c => c.abort()); ok ? resolve(val) : reject(val); };
-    const start = () => {
-      if (done || started >= OVERPASS.length) return;
-      const ac = new AbortController(); ctrls.push(ac);
-      tryOne(OVERPASS[started++], ac).then(v => finish(true, v), e => { if (++failed >= OVERPASS.length) finish(false, e); else start(); });
-    };
-    start();
-    for (let i=1; i<OVERPASS.length; i++) timers.push(setTimeout(start, i*5000));
-    timers.push(setTimeout(() => { const e = new Error('Tidsavbrudd'); e.name = 'AbortError'; finish(false, e); }, 45000));
-  });
+      return out;
+    } catch(e){ clearTimeout(to); lastErr = e; }
+  }
+  throw lastErr || new Error('Overpass');
 }
 async function wizCreate(){
   const W = ST.wiz, A = wizArea(); if (!A) return;
@@ -934,7 +892,7 @@ function tSetup(D){
     <h3>Øvelser i duellene</h3>
     <p class="small muted">Kryss av for øvelsene dere kan gjennomføre. Øvelsen trekkes tilfeldig for hver duell.</p>
     <div class="grid-2" style="gap:4px 20px">
-      ${CHALLENGES.map(c=>`<label class="check" for="ch-${c.id}"><input type="checkbox" id="ch-${c.id}" data-chal="${c.id}" ${offSet()[c.id]?'':'checked'}><span><b>${esc(c.t)}</b> <span class="muted small">· ${esc(c.kit)}${c.multi?'':' · bare 2 lag'}</span></span></label>`).join('')}
+      ${CHALLENGES.map(c=>`<label class="check" for="ch-${c.id}"><input type="checkbox" id="ch-${c.id}" data-chal="${c.id}" ${offSet()[c.id]?'':'checked'}><span><b>${esc(c.t)}</b> <span class="muted small">· ca. ${c.sek} sek · ${esc(c.kit)}${c.multi?'':' · bare 2 lag'}</span></span></label>`).join('')}
     </div>
   </div>
   <div class="card stack">
@@ -1067,7 +1025,8 @@ function challengeFor(c){
   const off = offSet(), n = c.gs.length;
   let pool = CHALLENGES.filter(x=>!off[x.id] && (n<=2 || x.multi));
   if (!pool.length) pool = CHALLENGES.filter(x=>n<=2||x.multi);
-  return (c.d.challenge && pool.find(x=>x.id===c.d.challenge)) || pool[hash(c.n) % pool.length];
+  if (c.d.challenge==='random') return RANDOM_CH;
+  return (c.d.challenge && (pool.find(x=>x.id===c.d.challenge) || CHALLENGES.find(x=>x.id===c.d.challenge))) || pool[hash(c.n) % pool.length];
 }
 function tDuels(D, readOnly=false){
   const done = D.contested.filter(c=>c.won).length, tot = D.contested.length;
@@ -1075,7 +1034,7 @@ function tDuels(D, readOnly=false){
   const list = readOnly && myG ? [...D.contested].sort((a,b)=>(b.gs.includes(myG)-a.gs.includes(myG))) : D.contested;
   return `
   <div class="intro"><h2>${readOnly?'Dueller':'Fase 4 · Duell'}</h2><p>${readOnly ? 'Gater flere grupper har funnet, avgjøres med en kort øvelse i gymsalen.' : 'Gater som flere grupper har funnet, avgjøres med en kort øvelse. Den lengste gata står øverst. Trykk på vinneren, så skifter gata farge på kartet.'}</p></div>
-  ${tot ? `<div class="stack" style="gap:6px"><div class="row between"><b>${done} av ${tot} dueller avgjort</b><span class="muted small">${fmtM(D.contested.filter(c=>!c.won).reduce((a,c)=>a+c.len,0))} står fortsatt på spill</span></div><div class="progress"><b style="width:${done/tot*100}%"></b></div></div>` : `<div class="empty">Ingen dueller ennå. De dukker opp når to grupper har funnet samme gate.</div>`}
+  ${tot ? `<div class="stack" style="gap:6px"><div class="row between"><b>${done} av ${tot} dueller avgjort</b><span class="muted small">${fmtM(D.contested.filter(c=>!c.won).reduce((a,c)=>a+c.len,0))} står fortsatt på spill</span></div><div class="progress"><b style="width:${done/tot*100}%"></b></div>${!readOnly && done<tot ? (ST.confirm==='rest' ? `<div class="confirm"><span>Trekke tilfeldig vinner i alle ${tot-done} duellene som gjenstår?</span><button class="btn small" data-act="d-rest-yes">Ja, trekk</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div><button class="linkbtn" data-act="confirm" data-c="rest">Lite tid? Trekk tilfeldig vinner i resten</button></div>`) : ''}</div>` : `<div class="empty">Ingen dueller ennå. De dukker opp når to grupper har funnet samme gate.</div>`}
   <div class="duels">${list.map(c=>{
     const drawn = !!c.d.challenge, ch = challengeFor(c), w = c.won ? groupById(c.d.winner) : null;
     return `<div class="duel ${c.won?'decided':''}">
@@ -1085,9 +1044,9 @@ function tDuels(D, readOnly=false){
         <div class="row">${c.gs.map(id=>teamChip(groupById(id))).join('<span class="muted">mot</span>')}</div>
       </div>
       <div class="stack">
-        ${w ? `<div class="stack" style="gap:6px"><div class="label">Erobret av</div><div class="row">${teamChip(w)}<span class="muted small">i ${esc(ch.t.toLowerCase())}</span></div>${readOnly?'':`<div><button class="linkbtn" data-act="d-undo" data-n="${esc(c.n)}">Angre</button></div>`}</div>`
-        : !drawn ? (readOnly ? `<div class="ch"><div class="label">Øvelse</div><p class="muted">Øvelsen trekkes i gymsalen.</p></div>` : `<div class="ch" style="gap:10px"><div class="label">Øvelse</div><div><button class="btn primary big" data-act="d-draw" data-n="${esc(c.n)}">Trekk øvelse</button></div></div>`)
-        : `<div class="ch"><div class="label">Øvelse</div><h3>${esc(ch.t)}</h3><p>${esc(ch.how)}</p><p class="small muted">Utstyr: ${esc(ch.kit)}</p>${readOnly?'':`<div><button class="linkbtn" data-act="d-draw" data-n="${esc(c.n)}" data-cur="${ch.id}">Trekk en annen øvelse</button></div>`}</div>
+        ${w ? `<div class="stack" style="gap:6px"><div class="label">Erobret av</div><div class="row">${teamChip(w)}<span class="muted small">${ch.id==='random' ? 'ved tilfeldig trekning' : 'i ' + esc(ch.t.toLowerCase())}</span></div>${readOnly?'':`<div><button class="linkbtn" data-act="d-undo" data-n="${esc(c.n)}">Angre</button></div>`}</div>`
+        : !drawn ? (readOnly ? `<div class="ch"><div class="label">Øvelse</div><p class="muted">Øvelsen trekkes i gymsalen.</p></div>` : `<div class="ch" style="gap:10px"><div class="label">Øvelse</div><div class="row"><button class="btn primary big" data-act="d-draw" data-n="${esc(c.n)}">Trekk øvelse</button><button class="btn" data-act="d-random" data-n="${esc(c.n)}">Tilfeldig vinner</button></div></div>`)
+        : `<div class="ch"><div class="label">Øvelse</div><h3>${esc(ch.t)}</h3><p>${esc(ch.how)}</p><p class="small muted">Ca. ${ch.sek} sek · Utstyr: ${esc(ch.kit)}</p>${readOnly?'':`<div class="row" style="gap:16px"><button class="linkbtn" data-act="d-draw" data-n="${esc(c.n)}" data-cur="${ch.id}">Trekk en annen øvelse</button><button class="linkbtn" data-act="d-random" data-n="${esc(c.n)}">Tilfeldig vinner</button></div>`}</div>
            ${readOnly?'':`<div class="stack" style="gap:6px"><div class="label">Hvem vant?</div><div class="winners">${c.gs.map(id=>{const g=groupById(id);return `<button style="--c:${esc(g.color)}" data-act="d-win" data-n="${esc(c.n)}" data-g="${id}" data-ch="${ch.id}"><i></i>${esc(g.name)}</button>`;}).join('')}</div></div>`}`}
       </div>
     </div>`;}).join('')}</div>
@@ -1424,10 +1383,10 @@ function openDraw(n, exclude){
     <div class="reel" id="reel"><div class="reel-strip" id="strip">${seq.map(x=>`<div class="reel-item">${esc(x.t)}</div>`).join('')}</div></div>
     <div class="fade stack" id="reveal" style="align-items:center;gap:14px">
       <p class="how">${esc(pick.how)}</p>
-      <p class="kit">Utstyr: ${esc(pick.kit)}</p>
+      <p class="kit">Ca. ${pick.sek} sekunder · Utstyr: ${esc(pick.kit)}</p>
       <div class="label" style="color:rgba(255,255,255,.7);margin-top:6px">Hvem vant?</div>
       <div class="winners" style="justify-content:center">${c.gs.map(id=>{const g=groupById(id);return `<button style="--c:${esc(g.color)}" data-act="d-win" data-n="${esc(n)}" data-g="${id}" data-ch="${pick.id}"><i></i>${esc(g.name)}</button>`;}).join('')}</div>
-      <div class="row" style="justify-content:center"><button class="btn" data-act="draw-close">Lukk, vi tar duellen senere</button></div>
+      <div class="row" style="justify-content:center"><button class="btn" data-act="d-random" data-n="${esc(n)}">Tilfeldig vinner i stedet</button><button class="btn" data-act="draw-close">Lukk, vi tar duellen senere</button></div>
     </div>
   </div>`;
   st.hidden = false;
@@ -1445,6 +1404,36 @@ function openDraw(n, exclude){
     reel.classList.add('done');
     sound(784, 0.14, 0.15, 'triangle'); setTimeout(()=>sound(1046, 0.3, 0.15, 'triangle'), 130);
     $('#reveal').classList.add('in');
+  };
+  drawAnim = requestAnimationFrame(step);
+}
+function openRandom(n){
+  const D = derive(), c = D.contested.find(x=>x.n===n); if (!c) return;
+  const winner = c.gs[Math.floor(Math.random()*c.gs.length)];
+  const order = [...c.gs].sort(()=>Math.random()-.5), minLen = reduceMotion() ? c.gs.length : 14;
+  const seq = [];
+  for (let i=0; seq.length < minLen || seq[seq.length-1] !== winner; i++) seq.push(order[i % order.length]);
+  const st = $('#stage');
+  st.innerHTML = `<div class="stage-inner">
+    <div class="label" style="color:rgba(255,255,255,.7)">Tilfeldig vinner av</div>
+    <span class="plate">${esc(n)}</span>
+    <div class="stake-line"><b class="num">${fmtM(c.len)}</b> står på spill</div>
+    <div class="reel" id="reel"><div class="reel-strip" id="strip">${seq.map(id=>{const g=groupById(id);return `<div class="reel-item" style="background:${esc(g.color)};color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25)">${esc(g.name)}</div>`;}).join('')}</div></div>
+  </div>`;
+  st.hidden = false;
+  const strip = $('#strip'), H = 120, total = (seq.length-1)*H, dur = reduceMotion() ? 400 : 3200, t0 = performance.now();
+  let lastIdx = -1;
+  const ease = x => 1 - Math.pow(1-x, 4);
+  const step = now => {
+    const p = Math.min(1, (now-t0)/dur), y = ease(p)*total;
+    strip.style.transform = `translateY(${-y}px)`;
+    const idx = Math.round(y/H);
+    if (idx !== lastIdx){ lastIdx = idx; sound(520 + (idx%2)*90, 0.04, 0.07); }
+    if (p < 1){ drawAnim = requestAnimationFrame(step); return; }
+    drawAnim = null;
+    $('#reel').classList.add('done');
+    teacherWrite('duels/'+slug(n), {street:n, winner, challenge:'random', at: firebase.database.ServerValue.TIMESTAMP});
+    setTimeout(() => { closeDraw(); showConquest(n, winner); }, 700);
   };
   drawAnim = requestAnimationFrame(step);
 }
@@ -1503,6 +1492,8 @@ document.addEventListener('click', e => {
     case 'd-win': { const n=t.dataset.n, gid=t.dataset.g; closeDraw(); teacherWrite('duels/'+slug(n), {street:n, winner:gid, challenge:t.dataset.ch, at: firebase.database.ServerValue.TIMESTAMP}); showConquest(n, gid); break; }
     case 'd-draw': openDraw(t.dataset.n, t.dataset.cur||null); break;
     case 'draw-close': closeDraw(); break;
+    case 'd-random': closeDraw(); openRandom(t.dataset.n); break;
+    case 'd-rest-yes': { ST.confirm=null; const D=derive(); const left=D.contested.filter(c=>!c.won); left.forEach(c=>teacherWrite('duels/'+slug(c.n), {street:c.n, winner:c.gs[Math.floor(Math.random()*c.gs.length)], challenge:'random', at: firebase.database.ServerValue.TIMESTAMP})); toast(left.length+' dueller er avgjort ved tilfeldig trekning.'); scheduleRender(); break; }
     case 'd-undo': teacherWrite('duels/'+slug(t.dataset.n)+'/winner', null); break;
     case 'goto': ST.tab = t.dataset.t; ls('erobre-tab-'+ST.code, ST.tab); scheduleRender(); window.scrollTo({top:0}); break;
     case 'fullscreen': { const el = $('#mw-game'); if (el?.requestFullscreen) el.requestFullscreen().then(()=>setTimeout(()=>MAPS.game?.map?.invalidateSize(),200)).catch(()=>{}); break; }
