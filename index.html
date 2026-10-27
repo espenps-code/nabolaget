@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Erobre nabolaget</title>
-<meta name="description" content="Gymspill der elevene erobrer gatene i nabolaget ved å fotografere gatenavnskilt.">
+<meta name="description" content="Utendørsspill der lag erobrer gatene i nabolaget ved å fotografere gatenavnskilt. For skoleklasser, idrettslag, speidere, jobben og vennegjengen.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;800;900&display=swap">
@@ -82,12 +82,18 @@ main{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;
 .btn.good{color:var(--good)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-input[type=text],input[type=search]{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 11px}
+input[type=text],input[type=search],input[type=number],textarea{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 11px}
 input.code-in{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.2em;text-transform:uppercase;text-align:center;padding:8px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 select{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:7px 8px;max-width:100%}
 .check{display:flex;gap:10px;align-items:flex-start;padding-block:6px}
 .check input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px;flex:none}
+.check-row{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.check-row .linkbtn{margin-top:6px;flex:none}
+.libchip{display:inline-flex;align-items:center;gap:2px}
+.ch-form{border-top:1px solid var(--line);padding-top:14px}
+.ch-form textarea{font:inherit;color:inherit;resize:vertical}
+.ch-form input[type=number]{max-width:140px}
 .notice{background:var(--accent-soft);border-radius:10px;padding:12px 14px;font-size:15px}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px;font-size:14px}
 
@@ -232,6 +238,7 @@ select{border:1px solid var(--line);background:var(--surface-2);border-radius:8p
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;z-index:3000;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 .empty{padding:26px;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:12px;display:flex;flex-direction:column;gap:10px;align-items:center}
 footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;font-size:13px;color:var(--muted)}
+footer a{color:inherit}
 /* draw + conquest overlay */
 .stage{position:fixed;inset:0;z-index:2500;background:rgba(12,18,15,.92);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto}
 .stage-inner{width:min(900px,100%);display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
@@ -268,7 +275,7 @@ footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;f
 <body>
 <header class="top" id="top"></header>
 <main id="main"><p class="muted">Laster …</p></main>
-<footer>Inspirert av Jet Lag: The Game. Kartdata og kartfliser © OpenStreetMap-bidragsytere (ODbL).</footer>
+<footer><a href="vilkar.html">Brukervilkår</a> · <a href="personvern.html">Personvern</a> · Gatedata © OpenStreetMap-bidragsytere (ODbL). Bakgrunnskart © Kartverket og OpenStreetMap.</footer>
 <div class="toast" id="toast" hidden></div>
 <div class="stage" id="stage" hidden role="dialog" aria-modal="true" aria-label="Duell"></div>
 <input type="file" id="s-files" accept="image/*" multiple hidden>
@@ -286,6 +293,7 @@ footer{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:0 32px;f
    ========================================================= */
 const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const OVERPASS_STAGGER = 5000, OVERPASS_TOTAL = 45000;
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const FETCH_MARGIN = 150;     // m extra around the chosen radius when downloading streets
 const MIN_LEN = 15;           // m inside the area before a street counts
@@ -296,28 +304,34 @@ const COLORS = [
   {c:'#8B4FD6', n:'Lilla'}, {c:'#0E9C9C', n:'Turkis'}, {c:'#DB4D98', n:'Rosa'}, {c:'#EE7A1A', n:'Oransje'}
 ];
 const CHALLENGES = [
-  {id:'reaksjon', t:'Ta ballen', how:'Én fra hvert lag ligger på magen med hendene på streken. En ball ligger 5 meter unna. Læreren roper «Nå!». Første som holder ballen, vinner.', kit:'1 ball, 1 strek', multi:true, sek:10},
-  {id:'sprint', t:'Sprint til kjeglen', how:'Én fra hvert lag står på streken. Første som tar på kjeglen 20 meter unna, vinner.', kit:'1 kjegle, 1 strek', multi:true, sek:15},
-  {id:'baklengs', t:'Baklengs sprint', how:'Én fra hvert lag løper baklengs 15 meter. Første over streken vinner.', kit:'2 streker', multi:true, sek:15},
-  {id:'krabbe', t:'Krabbegang', how:'Én fra hvert lag går krabbegang 10 meter. Første med hendene over streken, vinner.', kit:'2 streker', multi:true, sek:20},
-  {id:'rundt', t:'Rundt kjeglen', how:'Én fra hvert lag løper til kjeglen 10 meter unna, rundt den tre ganger og tilbake. Første over streken vinner.', kit:'1 kjegle per lag', multi:true, sek:20},
+  {id:'reaksjon', t:'Ta gjenstanden', how:'Én fra hvert lag ligger på magen med hendene på streken. En ball, en lue eller en sko ligger 5 meter unna. Spillederen roper «Nå!». Første som holder gjenstanden, vinner.', kit:'1 ball, lue eller sko', multi:true, sek:10},
+  {id:'sprint', t:'Sprint til merket', how:'Én fra hvert lag står på streken. Første som tar på merket 20 meter unna (et tre, en stolpe eller en sekk), vinner.', kit:'Noe å bruke som merke', multi:true, sek:15},
+  {id:'baklengs', t:'Baklengs sprint', how:'Én fra hvert lag løper baklengs 15 meter. Første over streken vinner.', kit:'Ikke noe utstyr', multi:true, sek:15},
+  {id:'krabbe', t:'Krabbegang', how:'Én fra hvert lag går krabbegang 10 meter. Første med hendene over streken, vinner.', kit:'Ikke noe utstyr', multi:true, sek:20},
+  {id:'rundt', t:'Rundt merket', how:'Én fra hvert lag løper til et merke 10 meter unna, rundt det tre ganger og tilbake. Første over streken vinner.', kit:'Noe å løpe rundt', multi:true, sek:20},
   {id:'flamingo', t:'Blind flamingo', how:'Én fra hvert lag står på ett bein med armene i kors og øynene lukket. Den som står lengst uten å sette ned foten eller åpne øynene, vinner.', kit:'Ikke noe utstyr', multi:true, sek:20},
-  {id:'lengde', t:'Stille lengde', how:'Én fra hvert lag hopper fra stående. Lengst hopp, målt ved hælen, vinner. Ett hopp hver.', kit:'Teip', multi:true, sek:30},
-  {id:'hink', t:'Lengste hink', how:'Én fra hvert lag tar ett hink på ett bein fra streken. Lengst hink, målt ved hælen, vinner.', kit:'Teip', multi:true, sek:20},
-  {id:'naermest', t:'Nærmest kjeglen', how:'Én fra hvert lag kaster en sandsekk mot en kjegle 8 meter unna. Sekken som ligger nærmest, vinner.', kit:'1 kjegle, sandsekker', multi:true, sek:30},
-  {id:'ballbak', t:'Ballen bakover', how:'Hele laget står på rekke. Ballen sendes bakover, annenhver gang over hodet og mellom beina. Første lag der den bakerste løfter ballen i været, vinner.', kit:'1 ball per lag', multi:true, sek:30},
+  {id:'lengde', t:'Stille lengde', how:'Én fra hvert lag hopper fra stående. Lengst hopp, målt ved hælen, vinner. Ett hopp hver. Merk hoppene med en pinne eller en sko.', kit:'Ikke noe utstyr', multi:true, sek:30},
+  {id:'hink', t:'Lengste hink', how:'Én fra hvert lag tar ett hink på ett bein fra streken. Lengst hink, målt ved hælen, vinner.', kit:'Ikke noe utstyr', multi:true, sek:20},
+  {id:'naermest', t:'Nærmest streken', how:'Én fra hvert lag kaster en kongle, en sokk eller en vott mot en strek 8 meter unna. Det som ligger nærmest streken, vinner.', kit:'1 kongle, sokk eller vott per lag', multi:true, sek:30},
+  {id:'ballbak', t:'Send den bakover', how:'Hele laget står på rekke. En ball eller en jakke sendes bakover, annenhver gang over hodet og mellom beina. Første lag der den bakerste løfter den i været, vinner.', kit:'1 ball eller jakke per lag', multi:true, sek:30},
   {id:'ssp', t:'Stein, saks, papir', how:'Én fra hvert lag. Best av tre. Er dere flere enn to lag, spiller alle samtidig, og de som taper en runde, går ut.', kit:'Ikke noe utstyr', multi:true, sek:30},
-  {id:'kurv', t:'Tre i kurven', how:'Én fra hvert lag skyter tre skudd fra straffekastlinja. Flest treff vinner. Står det likt, skyter de ett skudd hver til bare én treffer.', kit:'Basketkurv, ball', multi:true, sek:45},
-  {id:'kjegle', t:'Velt kjeglen', how:'Én fra hvert lag triller en ball mot en kjegle 6 meter unna, tre forsøk hver. Flest veltede kjegler vinner. Står det likt, avgjør stein, saks, papir.', kit:'1 kjegle, 1 ball', multi:true, sek:45},
-  {id:'tau', t:'Tautrekking', how:'Hele laget mot hele laget. Laget som drar midtmerket over sin egen strek, vinner. Står det stille i 30 sekunder, vinner laget som er nærmest.', kit:'Tau', multi:false, sek:45}
+  {id:'kjegle', t:'Velt flaska', how:'Én fra hvert lag triller en ball mot en tom flaske 6 meter unna, tre forsøk hver. Flest veltede flasker vinner. Står det likt, avgjør stein, saks, papir.', kit:'1 ball, 1 tom flaske', multi:true, sek:45},
+  {id:'planke', t:'Planken', how:'Én fra hvert lag går ned i planke. Den som holder lengst, vinner. Står flere fortsatt etter 90 sekunder, avgjør stein, saks, papir.', kit:'Ikke noe utstyr', multi:true, sek:60},
+  {id:'veggsitt', t:'Usynlig stol', how:'Én fra hvert lag setter seg med ryggen mot en vegg eller et tre, med knærne i 90 grader. Den som sitter lengst, vinner.', kit:'En vegg eller et tre', multi:true, sek:45},
+  {id:'spretthopp', t:'Spretthopp', how:'Én fra hvert lag tar så mange spretthopp de klarer på 20 sekunder. Laget teller høyt. Flest hopp vinner.', kit:'Mobil som stoppeklokke', multi:true, sek:20},
+  {id:'lagbein', t:'Hele laget på ett bein', how:'Hele laget står på ett bein og holder hverandre i skuldrene. Laget som står lengst uten at noen setter ned foten, vinner.', kit:'Ikke noe utstyr', multi:true, sek:30},
+  {id:'rekkefolge', t:'Stille rekkefølge', how:'Hele laget stiller seg på rekke etter bursdag, fra januar til desember, uten å snakke. Første lag som står riktig, vinner. Spillederen sjekker.', kit:'Ikke noe utstyr', multi:true, sek:60},
+  {id:'gjetttid', t:'Gjett tiden', how:'Én fra hvert lag lukker øynene og står. Spillederen sier «Start». Sett deg ned når du tror det har gått 30 sekunder. Den som er nærmest, vinner.', kit:'Mobil som stoppeklokke', multi:true, sek:45},
+  {id:'simon', t:'Simon sier', how:'Én fra hvert lag. Spillederen gir kommandoer som «Simon sier: ta deg på nesa». Kommer det uten «Simon sier», skal man stå stille. Den som gjør feil, går ut. Sist igjen vinner.', kit:'Ikke noe utstyr', multi:true, sek:45},
+  {id:'stirre', t:'Stirrekonkurranse', how:'Én fra hvert lag stirrer hverandre i øynene. Den som blunker, ser bort eller ler først, taper.', kit:'Ikke noe utstyr', multi:false, sek:30}
 ];
 const RANDOM_CH = {id:'random', t:'Tilfeldig trekning', how:'', kit:'', sek:5};
 const PHASES = [
-  {n:1, t:'Løp', s:'Elevene ser kartet og tiden'},
-  {n:2, t:'Last opp', s:'Elevene laster opp bilder'},
+  {n:1, t:'Løp', s:'Deltakerne ser kartet og tiden'},
+  {n:2, t:'Last opp', s:'Deltakerne laster opp bilder'},
   {n:3, t:'Poeng', s:'Opplastingen stenger'},
-  {n:4, t:'Duell', s:'Elevene ser duellene'},
-  {n:5, t:'Ferdig', s:'Elevene ser sluttstillingen'}
+  {n:4, t:'Duell', s:'Deltakerne ser duellene'},
+  {n:5, t:'Ferdig', s:'Deltakerne ser sluttstillingen'}
 ];
 
 /* ---------- helpers ---------- */
@@ -396,6 +410,10 @@ const groupsSorted = () => Object.entries(ST.groups||{}).map(([id,g])=>({id, ...
 const groupById = id => { const g = ST.groups?.[id]; return g ? {id, ...g} : null; };
 const phase = () => ST.meta?.phase || 1;
 const offSet = () => ST.meta?.off || {};
+const customList = () => Object.entries(ST.meta?.custom || {}).map(([id,c]) => ({id, custom:true, t:String(c.t||'Egen øvelse'), how:String(c.how||''), kit:String(c.kit||'Ikke oppgitt'), sek:+c.sek||30, multi:c.multi!==false}));
+const allChallenges = () => [...CHALLENGES, ...customList()];
+const LIB_KEY = 'erobre-egne-ovelser';
+const libList = () => (ls(LIB_KEY) || []).filter(x => x && x.t);
 
 /* ---------- subscriptions ---------- */
 let subs = [];
@@ -528,7 +546,7 @@ function derive(){
 /* ---------- rendering core ---------- */
 let renderQueued = false;
 function scheduleRender(){ if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
-function editing(){ const a=document.activeElement; return a && (a.tagName==='INPUT' && /^(text|search)$/.test(a.type)) && a.dataset.live!=='1'; }
+function editing(){ const a=document.activeElement; return a && ((a.tagName==='INPUT' && /^(text|search|number)$/.test(a.type)) || a.tagName==='TEXTAREA') && a.dataset.live!=='1'; }
 function render(){
   if (editing()) return;
   const main = $('#main'), top = $('#top');
@@ -562,18 +580,19 @@ function viewLanding(){
   <section class="hero">
     <div>
       <h2>Erobre <span>nabolaget</span></h2>
-      <p class="lead">Elevene løper rundt i grupper og fotograferer gatenavnskilt. Gater bare én gruppe har funnet, er erobret. Resten avgjøres i duell i gymsalen. Flest meter gate vinner.</p>
+      <p class="lead">Lagene løper rundt og fotograferer gatenavnskilt. Gater bare ett lag har funnet, er erobret. Resten avgjøres i en kort duell når dere er samlet igjen. Flest meter gate vinner.</p>
+      <p class="muted">For skoleklassen, idrettslaget, speideren, jobben eller vennegjengen. Alt du trenger, er en mobil per lag.</p>
     </div>
     <div class="signs" aria-hidden="true">
       <span class="plate" style="--r:-2deg">Storgata</span>
-      <span class="plate" style="--r:1.5deg">Skolevegen</span>
+      <span class="plate" style="--r:1.5deg">Parkveien</span>
       <span class="plate" style="--r:-1deg">Kirkebakken</span>
     </div>
   </section>
   <div class="choices">
     <div class="card choice">
-      <h3>Jeg er elev</h3>
-      <p class="muted">Skriv inn spillkoden læreren viser.</p>
+      <h3>Jeg skal være med</h3>
+      <p class="muted">Skriv inn spillkoden fra spillederen.</p>
       <form id="f-code" class="stack" autocomplete="off">
         <label class="label" for="code-in">Spillkode</label>
         <input type="text" class="code-in" id="code-in" maxlength="6" placeholder="ABC123" value="${esc(ST.join.code)}" ${cfgOk?'':'disabled'}>
@@ -581,8 +600,8 @@ function viewLanding(){
       </form>
     </div>
     <div class="card choice">
-      <h3>Jeg er lærer</h3>
-      <p class="muted">Velg sted og område, lag gruppene, og vis spillkoden til klassen.</p>
+      <h3>Jeg er spilleder</h3>
+      <p class="muted">Velg sted og område, sett opp lagene, og vis spillkoden til deltakerne.</p>
       <div><button class="btn primary big" data-act="create" ${cfgOk?'':'disabled'}>Lag et nytt spill</button></div>
       ${mine.length ? `<div class="stack" style="gap:6px"><div class="label">Spill du har laget på denne maskinen</div><ul class="mine">${mine.map(m=>`<li><span><b>${esc(m.name||m.code)}</b> <span class="muted small">· ${esc(m.code)} · ${new Date(m.created).toLocaleDateString('nb-NO')}</span></span><button class="btn small" data-act="open-mine" data-code="${esc(m.code)}">Åpne</button></li>`).join('')}</ul></div>` : ''}
     </div>
@@ -591,7 +610,7 @@ function viewLanding(){
     <h3>Slik fungerer det</h3>
     <ol class="phases">
       <li><div><b>Løp og fotografer</b><span class="muted">Gruppene løper innenfor sirkelen på kartet og tar bilde av så mange gatenavnskilt de klarer.</span></div></li>
-      <li><div><b>Last opp</b><span class="muted">Tilbake på skolen laster hver gruppe opp bildene på sin iPad eller PC. Tekstleseren kjenner igjen gatenavnet, og læreren sjekker de usikre.</span></div></li>
+      <li><div><b>Last opp</b><span class="muted">Når dere er samlet igjen, laster hvert lag opp bildene fra mobil, nettbrett eller PC. Tekstleseren kjenner igjen gatenavnet, og spillederen sjekker de usikre.</span></div></li>
       <li><div><b>Poeng</b><span class="muted">Gater bare én gruppe har funnet, er erobret. Lengden på gata i meter er poengene.</span></div></li>
       <li><div><b>Duell</b><span class="muted">Har flere grupper samme gate, avgjøres den med en kort øvelse. Vinneren tar hele gata.</span></div></li>
     </ol>
@@ -610,7 +629,7 @@ function viewJoin(){
   const g = gs.find(x=>x.id===J.gid);
   const dots = [0,1,2,3].map(i=>`<span>${J.pin[i] ? '•' : ''}</span>`).join('');
   return `
-    <div class="intro"><h2>${esc(g?.name||'')}</h2><p>Skriv inn gruppekoden på fire siffer. Læreren har den.</p></div>
+    <div class="intro"><h2>${esc(g?.name||'')}</h2><p>Skriv inn gruppekoden på fire siffer. Spillederen har den.</p><p class="small muted">Ta bilde av skiltet, ikke av folk. Følg trafikkreglene. <a href="personvern.html" target="_blank" rel="noopener">Personvern</a></p></div>
     <div class="card stack" style="align-items:center">
       <div class="pin" aria-label="Kode">${dots}</div>
       <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="j-key" data-k="${n}">${n}</button>`).join('')}<button data-act="j-back" aria-label="Tilbake">←</button><button data-act="j-key" data-k="0">0</button><button data-act="j-clear" aria-label="Tøm">×</button></div>
@@ -668,7 +687,7 @@ function wizArea(){
 function viewCreate(){
   const W = ST.wiz, A = wizArea();
   return `
-  <div class="intro"><h2>Lag et nytt spill</h2><p>Finn skolen på kartet, velg hvor stort området skal være, og lag gruppene. Gatene hentes fra OpenStreetMap.</p></div>
+  <div class="intro"><h2>Lag et nytt spill</h2><p>Finn startstedet på kartet, velg hvor stort området skal være, og lag gruppene. Gatene hentes fra OpenStreetMap.</p></div>
   <div class="grid-2">
     <div class="stack">
       <div class="card stack">
@@ -678,7 +697,7 @@ function viewCreate(){
       <div class="card stack">
         <div class="label">Startsted</div>
         <form id="f-search" class="row" style="flex-wrap:nowrap" autocomplete="off">
-          <input type="search" id="w-q" placeholder="Søk etter skolen eller et sted" value="${esc(W.q)}">
+          <input type="search" id="w-q" placeholder="Søk etter et sted eller en adresse" value="${esc(W.q)}">
           <button class="btn" type="submit">Søk</button>
         </form>
         ${W.searching ? `<p class="row small"><span class="spin"></span> Søker …</p>` : ''}
@@ -703,6 +722,7 @@ function viewCreate(){
         <button class="btn primary big" data-act="w-create" ${(A && A.list.length && !W.creating && !W.fetching && W.radius <= (W.fetchedR||0))?'':'disabled'}>${W.creating?'Oppretter …':'Opprett spillet'}</button>
         <button class="btn" data-act="w-cancel">Avbryt</button>
       </div>
+      <p class="small muted">Når du oppretter spillet, godtar du <a href="vilkar.html" target="_blank" rel="noopener">brukervilkårene</a>. Som spilleder har du ansvaret for at spillet foregår trygt, særlig i trafikken. Les også <a href="personvern.html" target="_blank" rel="noopener">personvernerklæringen</a>.</p>
     </div>
     <div class="mapwrap" style="aspect-ratio:auto;height:min(78vh,720px)"><div class="mapslot" data-map="wiz"></div></div>
   </div>`;
@@ -747,28 +767,37 @@ async function fetchStreets(lat, lon, R){
   const bb = [lat-dLat, lon-dLon, lat+dLat, lon+dLon].map(x=>x.toFixed(6)).join(',');
   const types = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|cycleway|path';
   const q = `[out:json][timeout:25];way["highway"~"^(${types})$"]["name"]["tunnel"!="yes"](around:${Math.round(R)},${lat},${lon});out geom(${bb});`;
-  let lastErr;
-  for (const url of OVERPASS){
-    const ac = new AbortController(), to = setTimeout(()=>ac.abort(), 30000);
-    try {
-      const r = await fetch(url, {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal});
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      const js = await r.json();
-      clearTimeout(to);
-      const out = [];
-      for (const e of js.elements){
-        if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
-        let cur = [];
-        for (const p of e.geometry){
-          if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
-          else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
-        }
-        if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
+  const parse = js => {
+    const out = [];
+    for (const e of (js.elements||[])){
+      if (e.type!=='way' || !e.geometry || !e.tags?.name || /tunnel(en)?$|\sbru$/i.test(e.tags.name)) continue;
+      let cur = [];
+      for (const p of e.geometry){
+        if (p && typeof p.lat==='number'){ cur.push([p.lat, p.lon]); }
+        else { if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur}); cur = []; }
       }
-      return out;
-    } catch(e){ clearTimeout(to); lastErr = e; }
-  }
-  throw lastErr || new Error('Overpass');
+      if (cur.length>1) out.push({n:e.tags.name.trim(), ll:cur});
+    }
+    return out;
+  };
+  // Ask the servers one by one, a few seconds apart, and use the first good answer.
+  return new Promise((resolve, reject) => {
+    const ctrls = [], timers = [];
+    let done = false, failed = 0, started = 0, lastErr = null;
+    const finish = (err, val) => { if (done) return; done = true; timers.forEach(clearTimeout); ctrls.forEach(c=>{ try{ c.abort(); }catch(e){} }); err ? reject(err) : resolve(val); };
+    const launch = i => {
+      if (done || i >= OVERPASS.length) return;
+      started++;
+      const ac = new AbortController(); ctrls.push(ac);
+      fetch(OVERPASS[i], {method:'POST', body:'data='+encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}, signal:ac.signal})
+        .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(js => { if (!js.elements?.length && js.remark && /error|timed out|rate|load/i.test(js.remark)) throw new Error(js.remark); finish(null, parse(js)); })
+        .catch(e => { if (done) return; lastErr = e; failed++; if (i+1 < OVERPASS.length && started === i+1){ launch(i+1); } else if (failed >= OVERPASS.length) finish(lastErr || new Error('Overpass')); });
+      timers.push(setTimeout(() => { if (!done && started === i+1) launch(i+1); }, OVERPASS_STAGGER));
+    };
+    timers.push(setTimeout(() => { const e = new Error('Tidsavbrudd'); e.name = 'AbortError'; finish(e); }, OVERPASS_TOTAL));
+    launch(0);
+  });
 }
 async function wizCreate(){
   const W = ST.wiz, A = wizArea(); if (!A) return;
@@ -820,7 +849,7 @@ async function openTeacher(code, key){
     history.replaceState(null, '', location.pathname + location.search);
     startGame(code, 'teacher');
   } catch(e){
-    console.warn(e); toast('Lærerlenken virker ikke. Spillet kan være slettet.');
+    console.warn(e); toast('Spillederlenken virker ikke. Spillet kan være slettet.');
     const mine = (ls('erobre-mine')||[]).filter(m=>m.code!==code); ls('erobre-mine', mine);
     ST.view='landing'; history.replaceState(null, '', location.pathname + location.search); scheduleRender();
   }
@@ -837,7 +866,7 @@ function headerTeacher(D){
       <span class="where">${esc(ST.meta?.name||'')}${ST.meta?.place?' · '+esc(ST.meta.place):''}</span>
       <span class="right"><span class="small muted">Spillkode</span><span class="code-badge">${esc(ST.code)}</span><button class="btn small" data-act="leave">Lukk</button></span>
     </div>
-    <div class="phasebar" role="group" aria-label="Fase for elevene"><span class="label" style="margin-right:4px">Elevene ser</span>${PHASES.map(p=>`<button data-act="phase" data-p="${p.n}" aria-pressed="${phase()===p.n}" title="${esc(p.s)}">${p.n<5?p.n+' ':''}${esc(p.t)}</button>`).join('')}</div>
+    <div class="phasebar" role="group" aria-label="Fase for deltakerne"><span class="label" style="margin-right:4px">Deltakerne ser</span>${PHASES.map(p=>`<button data-act="phase" data-p="${p.n}" aria-pressed="${phase()===p.n}" title="${esc(p.s)}">${p.n<5?p.n+' ':''}${esc(p.t)}</button>`).join('')}</div>
     <nav class="tabs" role="tablist">${tabs.map(([k,t,n])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${ST.tab===k}">${n?`<span class="n">${n}</span>`:''}${t}${k==='bilder'&&D.pendingAll?` <span class="badge">${D.pendingAll}</span>`:''}${k==='duell'&&D.contested.filter(c=>!c.won).length?` <span class="badge">${D.contested.filter(c=>!c.won).length}</span>`:''}</button>`).join('')}</nav>
   </div>`;
 }
@@ -860,17 +889,17 @@ function tSetup(D){
   const gs = groupsSorted(), used = new Set(gs.map(g=>g.color)), pins = ST.secret?.pins || {};
   const s = ST.streets;
   return `
-  <div class="intro"><h2>Oppsett</h2><p>Vis spillkoden eller QR-koden til elevene. Hver gruppe logger inn med sin egen firesifrede kode.</p></div>
+  <div class="intro"><h2>Oppsett</h2><p>Vis spillkoden eller QR-koden til deltakerne. Hver gruppe logger inn med sin egen firesifrede kode.</p></div>
   <div class="grid-2">
     <div class="card stack">
-      <h3>Elevene blir med</h3>
+      <h3>Deltakerne blir med</h3>
       <div class="row" style="align-items:flex-start;gap:18px">
         <div class="qr" aria-label="QR-kode til spillet">${qrSvg(studentUrl())}</div>
         <div class="stack" style="gap:6px;min-width:0;flex:1">
           <div class="label">Spillkode</div>
           <div class="bigcode">${esc(ST.code)}</div>
           <p class="small muted" style="word-break:break-all">${esc(studentUrl())}</p>
-          <div><button class="btn small" data-act="copy" data-text="${esc(studentUrl())}">Kopier elevlenken</button></div>
+          <div><button class="btn small" data-act="copy" data-text="${esc(studentUrl())}">Kopier deltakerlenken</button></div>
         </div>
       </div>
       <div class="label">Gruppekoder</div>
@@ -890,15 +919,17 @@ function tSetup(D){
   </div>
   <div class="card stack">
     <h3>Øvelser i duellene</h3>
-    <p class="small muted">Kryss av for øvelsene dere kan gjennomføre. Øvelsen trekkes tilfeldig for hver duell.</p>
+    <p class="small muted">Kryss av for øvelsene dere kan gjennomføre. Øvelsen trekkes tilfeldig for hver duell. Alle øvelsene krever lite eller ikke noe utstyr.</p>
     <div class="grid-2" style="gap:4px 20px">
-      ${CHALLENGES.map(c=>`<label class="check" for="ch-${c.id}"><input type="checkbox" id="ch-${c.id}" data-chal="${c.id}" ${offSet()[c.id]?'':'checked'}><span><b>${esc(c.t)}</b> <span class="muted small">· ca. ${c.sek} sek · ${esc(c.kit)}${c.multi?'':' · bare 2 lag'}</span></span></label>`).join('')}
+      ${allChallenges().map(c=>`<div class="check-row"><label class="check" for="ch-${c.id}"><input type="checkbox" id="ch-${c.id}" data-chal="${c.id}" ${offSet()[c.id]?'':'checked'}><span><b>${esc(c.t)}</b>${c.custom?' <span class="pill">Egen</span>':''} <span class="muted small">· ca. ${c.sek} sek · ${esc(c.kit)}${c.multi?'':' · bare 2 lag'}</span></span></label>${c.custom?`<button class="linkbtn small" data-act="ch-del" data-id="${esc(c.id)}" aria-label="Slett ${esc(c.t)}">Slett</button>`:''}</div>`).join('')}
     </div>
+    ${chLibHtml()}
+    ${chFormHtml()}
   </div>
   <div class="card stack">
-    <h3>Lærerlenke</h3>
-    <p class="small muted">Med denne lenken kan en annen lærer styre spillet, eller du kan åpne det på en annen maskin. Ikke del den med elevene.</p>
-    ${teacherUrl() ? `<div class="row"><button class="btn small" data-act="copy" data-text="${esc(teacherUrl())}">Kopier lærerlenken</button></div>` : ''}
+    <h3>Spillederlenke</h3>
+    <p class="small muted">Med denne lenken kan en annen spilleder styre spillet, eller du kan åpne det på en annen maskin. Ikke del den med deltakerne.</p>
+    ${teacherUrl() ? `<div class="row"><button class="btn small" data-act="copy" data-text="${esc(teacherUrl())}">Kopier spillederlenken</button></div>` : ''}
   </div>
   <div class="card stack">
     <h3>Rydd opp</h3>
@@ -933,7 +964,7 @@ function timeWindowHtml(){
 function tRun(D){
   const T = timerState(), m = ST.meta;
   return `
-  <div class="intro"><h2>Fase 1 · Løp</h2><p>Vis kartet på storskjermen før dere går ut. Når du starter klokka, ser elevene nedtellingen på sine skjermer.</p></div>
+  <div class="intro"><h2>Fase 1 · Løp</h2><p>Vis kartet på storskjermen før dere går ut. Når du starter klokka, ser deltakerne nedtellingen på sine skjermer.</p></div>
   <div class="grid-2">
     <div class="card stack" style="align-items:flex-start">
       <div class="label">Tid igjen</div>
@@ -959,7 +990,7 @@ function claimCard(gid, pid, c, opts={}){
   const g = groupById(gid);
   const plates = names.map(n => `<span class="plate ${st==='rejected'?'off':''}">${esc(n)}</span>`).join(' ');
   const badge = st==='ok' ? (ST.verdicts?.[gid]?.[pid]===true ? `<span class="pill good">Godkjent</span>` : `<span class="pill good">Lest automatisk</span>`) : st==='rejected' ? `<span class="pill bad">Avvist</span>` : st==='late' ? `<span class="pill bad">${c.late==='early'?'Tatt før start':'Tatt etter fristen'}</span>` : `<span class="pill warn">Må sjekkes</span>`;
-  const noImgText = c.m ? 'Lagt inn av læreren' : st==='pending' ? null : c.i ? 'Bildet er slettet etter at du gikk gjennom det' : st==='late' ? 'Tatt utenfor tiden. Bildet lagres ikke.' : 'Lest automatisk. Bildet lagres ikke.';
+  const noImgText = c.m ? 'Lagt inn av spillederen' : st==='pending' ? null : c.i ? 'Bildet er slettet etter at du gikk gjennom det' : st==='late' ? 'Tatt utenfor tiden. Bildet lagres ikke.' : 'Lest automatisk. Bildet lagres ikke.';
   const imgHtml = noImgText ? `<div class="noimg">${noImgText}</div>` : img===undefined ? `<div class="noimg"><span class="spin"></span></div>` : img===null ? `<div class="noimg">Bildet er slettet</div>` : `<img src="${esc(img)}" alt="Bilde fra ${esc(g?.name||'gruppa')}" loading="lazy">`;
   const when = c.m ? '' : c.tt ? `<p class="small ${st==='late'?'':'muted'}" style="${st==='late'?'color:var(--bad)':''}">Tatt ${esc(dayTime(c.tt))}</p>` : (c.tc==='unknown' ? `<p class="small" style="color:var(--warn)">Bildet har ikke noe tidspunkt. Sjekk at det er tatt i løpet.</p>` : '');
   return `<article class="photo ${st==='pending'?'flag':''}">
@@ -1021,19 +1052,53 @@ function teamCard(s, D, editable){
     ${editable ? `<div class="adj"><label for="adj-${g.id}">Bonus/straff</label><input type="text" inputmode="numeric" id="adj-${g.id}" data-adj="${g.id}" value="${s.adj||''}" placeholder="0"> <span class="muted">meter</span></div>` : (s.adj ? `<div class="adj muted">Bonus/straff: ${s.adj>0?'+':''}${s.adj} m</div>` : '')}
   </div>`;
 }
+function chLibHtml(){
+  const have = new Set(customList().map(c => c.t.toLowerCase()));
+  const lib = libList().map((x,i)=>({...x, i})).filter(x => !have.has(String(x.t).toLowerCase()));
+  if (!lib.length) return '';
+  return `<div class="stack" style="gap:6px"><div class="label">Egne øvelser fra tidligere spill på denne maskinen</div><div class="row" style="gap:8px">${lib.map(x=>`<span class="libchip"><button class="btn small" data-act="ch-lib" data-i="${x.i}">+ ${esc(x.t)}</button><button class="linkbtn small" data-act="ch-lib-del" data-i="${x.i}" aria-label="Fjern ${esc(x.t)} fra listen">×</button></span>`).join('')}</div></div>`;
+}
+function chFormHtml(){
+  const d = ST.chDraft || (ST.chDraft = {t:'', how:'', kit:'', sek:30, multi:true});
+  if (!ST.chOpen) return `<div><button class="btn" data-act="ch-open">+ Lag din egen øvelse</button></div>`;
+  return `<div class="ch-form stack">
+    <h3>Ny øvelse</h3>
+    <div class="stack" style="gap:4px"><label class="label" for="ch-t">Navn</label><input type="text" id="ch-t" maxlength="40" value="${esc(d.t)}" placeholder="For eksempel: Hopp tau"></div>
+    <div class="stack" style="gap:4px"><label class="label" for="ch-how">Slik gjør dere det</label><textarea id="ch-how" maxlength="300" rows="3" placeholder="Hvem deltar, hva skal de gjøre, og hvem vinner?">${esc(d.how)}</textarea></div>
+    <div class="grid-2" style="gap:12px">
+      <div class="stack" style="gap:4px"><label class="label" for="ch-kit">Utstyr</label><input type="text" id="ch-kit" maxlength="60" value="${esc(d.kit)}" placeholder="Ikke noe utstyr"></div>
+      <div class="stack" style="gap:4px"><label class="label" for="ch-sek">Omtrent hvor mange sekunder?</label><input type="number" id="ch-sek" min="5" max="300" step="5" value="${esc(d.sek)}"></div>
+    </div>
+    <label class="check" for="ch-multi"><input type="checkbox" id="ch-multi" ${d.multi?'checked':''}><span>Kan spilles med flere enn to lag samtidig</span></label>
+    <div class="row"><button class="btn primary" data-act="ch-add">Legg til øvelsen</button><button class="btn" data-act="ch-close">Avbryt</button></div>
+    <p class="small muted">Øvelsen gjelder dette spillet. Den huskes også på denne maskinen, så du kan legge den til i neste spill med ett trykk.</p>
+  </div>`;
+}
+function chAdd(x){
+  const t = String(x.t||'').trim().slice(0,40);
+  if (!t){ toast('Gi øvelsen et navn først.'); return false; }
+  const c = {t, how:String(x.how||'').trim().slice(0,300), kit:String(x.kit||'').trim().slice(0,60) || 'Ikke noe utstyr', sek:Math.min(300, Math.max(5, Math.round(+x.sek||30))), multi:x.multi!==false};
+  const id = 'c-' + rand(6, 'abcdefghijkmnpqrstuvwxyz23456789');
+  teacherWrite('meta/custom/'+id, c);
+  const lib = libList().filter(y => String(y.t).toLowerCase() !== t.toLowerCase());
+  lib.unshift(c); ls(LIB_KEY, lib.slice(0,40));
+  toast(t + ' er lagt til.');
+  return true;
+}
 function challengeFor(c){
   const off = offSet(), n = c.gs.length;
-  let pool = CHALLENGES.filter(x=>!off[x.id] && (n<=2 || x.multi));
-  if (!pool.length) pool = CHALLENGES.filter(x=>n<=2||x.multi);
+  const ALL = allChallenges();
+  let pool = ALL.filter(x=>!off[x.id] && (n<=2 || x.multi));
+  if (!pool.length) pool = ALL.filter(x=>n<=2||x.multi);
   if (c.d.challenge==='random') return RANDOM_CH;
-  return (c.d.challenge && (pool.find(x=>x.id===c.d.challenge) || CHALLENGES.find(x=>x.id===c.d.challenge))) || pool[hash(c.n) % pool.length];
+  return (c.d.challenge && (pool.find(x=>x.id===c.d.challenge) || ALL.find(x=>x.id===c.d.challenge))) || pool[hash(c.n) % pool.length];
 }
 function tDuels(D, readOnly=false){
   const done = D.contested.filter(c=>c.won).length, tot = D.contested.length;
   const myG = ST.me?.gid;
   const list = readOnly && myG ? [...D.contested].sort((a,b)=>(b.gs.includes(myG)-a.gs.includes(myG))) : D.contested;
   return `
-  <div class="intro"><h2>${readOnly?'Dueller':'Fase 4 · Duell'}</h2><p>${readOnly ? 'Gater flere grupper har funnet, avgjøres med en kort øvelse i gymsalen.' : 'Gater som flere grupper har funnet, avgjøres med en kort øvelse. Den lengste gata står øverst. Trykk på vinneren, så skifter gata farge på kartet.'}</p></div>
+  <div class="intro"><h2>${readOnly?'Dueller':'Fase 4 · Duell'}</h2><p>${readOnly ? 'Gater flere lag har funnet, avgjøres med en kort øvelse når dere er samlet.' : 'Gater som flere grupper har funnet, avgjøres med en kort øvelse. Den lengste gata står øverst. Trykk på vinneren, så skifter gata farge på kartet.'}</p></div>
   ${tot ? `<div class="stack" style="gap:6px"><div class="row between"><b>${done} av ${tot} dueller avgjort</b><span class="muted small">${fmtM(D.contested.filter(c=>!c.won).reduce((a,c)=>a+c.len,0))} står fortsatt på spill</span></div><div class="progress"><b style="width:${done/tot*100}%"></b></div>${!readOnly && done<tot ? (ST.confirm==='rest' ? `<div class="confirm"><span>Trekke tilfeldig vinner i alle ${tot-done} duellene som gjenstår?</span><button class="btn small" data-act="d-rest-yes">Ja, trekk</button><button class="btn small" data-act="confirm-no">Avbryt</button></div>` : `<div><button class="linkbtn" data-act="confirm" data-c="rest">Lite tid? Trekk tilfeldig vinner i resten</button></div>`) : ''}</div>` : `<div class="empty">Ingen dueller ennå. De dukker opp når to grupper har funnet samme gate.</div>`}
   <div class="duels">${list.map(c=>{
     const drawn = !!c.d.challenge, ch = challengeFor(c), w = c.won ? groupById(c.d.winner) : null;
@@ -1045,7 +1110,7 @@ function tDuels(D, readOnly=false){
       </div>
       <div class="stack">
         ${w ? `<div class="stack" style="gap:6px"><div class="label">Erobret av</div><div class="row">${teamChip(w)}<span class="muted small">${ch.id==='random' ? 'ved tilfeldig trekning' : 'i ' + esc(ch.t.toLowerCase())}</span></div>${readOnly?'':`<div><button class="linkbtn" data-act="d-undo" data-n="${esc(c.n)}">Angre</button></div>`}</div>`
-        : !drawn ? (readOnly ? `<div class="ch"><div class="label">Øvelse</div><p class="muted">Øvelsen trekkes i gymsalen.</p></div>` : `<div class="ch" style="gap:10px"><div class="label">Øvelse</div><div class="row"><button class="btn primary big" data-act="d-draw" data-n="${esc(c.n)}">Trekk øvelse</button><button class="btn" data-act="d-random" data-n="${esc(c.n)}">Tilfeldig vinner</button></div></div>`)
+        : !drawn ? (readOnly ? `<div class="ch"><div class="label">Øvelse</div><p class="muted">Øvelsen trekkes når dere er samlet.</p></div>` : `<div class="ch" style="gap:10px"><div class="label">Øvelse</div><div class="row"><button class="btn primary big" data-act="d-draw" data-n="${esc(c.n)}">Trekk øvelse</button><button class="btn" data-act="d-random" data-n="${esc(c.n)}">Tilfeldig vinner</button></div></div>`)
         : `<div class="ch"><div class="label">Øvelse</div><h3>${esc(ch.t)}</h3><p>${esc(ch.how)}</p><p class="small muted">Ca. ${ch.sek} sek · Utstyr: ${esc(ch.kit)}</p>${readOnly?'':`<div class="row" style="gap:16px"><button class="linkbtn" data-act="d-draw" data-n="${esc(c.n)}" data-cur="${ch.id}">Trekk en annen øvelse</button><button class="linkbtn" data-act="d-random" data-n="${esc(c.n)}">Tilfeldig vinner</button></div>`}</div>
            ${readOnly?'':`<div class="stack" style="gap:6px"><div class="label">Hvem vant?</div><div class="winners">${c.gs.map(id=>{const g=groupById(id);return `<button style="--c:${esc(g.color)}" data-act="d-win" data-n="${esc(c.n)}" data-g="${id}" data-ch="${ch.id}"><i></i>${esc(g.name)}</button>`;}).join('')}</div></div>`}`}
       </div>
@@ -1105,11 +1170,11 @@ function viewStudent(D){
     ${ST.local.length ? `<div class="row between"><b>${ST.local.filter(i=>i.status==='ready').length} klare til å sendes</b><span class="row">${ST.local.some(i=>i.status==='ready'&&i.sel)?`<button class="btn primary" data-act="s-send-all">Send inn alle som har gate</button>`:''}</span></div><div class="photos">${ST.local.map(localCard).join('')}</div>` : ''}
     <div class="card stack">
       <h3>${esc(g.name)} har ${streets.size} gate${streets.size===1?'':'r'}</h3>
-      ${mine.length ? `<div class="found">${mine.map(x=>`<span class="row" style="gap:4px">${Object.values(x.c.s||{}).map(n=>`<span class="plate ${x.st==='rejected'?'off':''}">${esc(n)}</span>`).join('')}${x.st==='pending'?'<span class="pill warn">Læreren sjekker</span>':x.st==='rejected'?'<span class="pill bad">Avvist</span>':x.st==='late'?'<span class="pill bad">Tatt utenfor tiden</span>':''}</span>`).join('')}</div>` : `<p class="muted">Ingen gater sendt inn ennå.</p>`}
+      ${mine.length ? `<div class="found">${mine.map(x=>`<span class="row" style="gap:4px">${Object.values(x.c.s||{}).map(n=>`<span class="plate ${x.st==='rejected'?'off':''}">${esc(n)}</span>`).join('')}${x.st==='pending'?'<span class="pill warn">Spillederen sjekker</span>':x.st==='rejected'?'<span class="pill bad">Avvist</span>':x.st==='late'?'<span class="pill bad">Tatt utenfor tiden</span>':''}</span>`).join('')}</div>` : `<p class="muted">Ingen gater sendt inn ennå.</p>`}
     </div>`;
   } else {
     body = `
-    ${ph===3 ? `<div class="notice">Opplastingen er stengt. Læreren teller poengene.</div>` : ''}
+    ${ph===3 ? `<div class="notice">Opplastingen er stengt. Spillederen teller poengene.</div>` : ''}
     ${ph>=4 && D.contested.length ? tDuels(D, true) : ''}
     ${mapTab(D, true)}
     ${ph>=3 ? `<div class="teams">${Object.values(D.score).filter(s=>s.g.id===gid).map(s=>teamCard(s, D, false)).join('')}</div>` : ''}`;
@@ -1247,7 +1312,7 @@ async function sendItem(it){
     if (needsReview) claim.i = true;
     await gref(`claims/${gid}/${pid}`).set(claim);
     ST.local = ST.local.filter(x=>x!==it); URL.revokeObjectURL(it.url);
-    toast(late ? `${it.sel} er sendt inn, men bildet er tatt utenfor tiden og teller ikke.` : needsReview ? `${it.sel} er sendt inn. Læreren sjekker bildet.` : `${it.sel} er sendt inn og teller.`);
+    toast(late ? `${it.sel} er sendt inn, men bildet er tatt utenfor tiden og teller ikke.` : needsReview ? `${it.sel} er sendt inn. Spillederen sjekker bildet.` : `${it.sel} er sendt inn og teller.`);
   } catch(e){
     console.warn(e); it.status='error'; it.msg = phase()>2 ? 'Opplastingen er stengt.' : 'Kunne ikke sende. Sjekk nettet og prøv igjen.';
   }
@@ -1256,8 +1321,34 @@ async function sendItem(it){
 
 /* ---------- Leaflet maps ---------- */
 const MAPS = {};
-const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere';
+const TILE_OSM = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere';
+const TILE_KV = layer => `https://cache.kartverket.no/v1/wmts/1.0.0/${layer}/default/webmercator/{z}/{y}/{x}.png`;
+const KV_ATTR = '© <a href="https://www.kartverket.no/">Kartverket</a> · gater © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+// rough box around mainland Norway (Kartverket returns blank tiles outside it)
+const inNorway = (lat, lon) => lat > 57.7 && lat < 71.4 && lon > 4.0 && lon < 31.3;
+/* Base map: Kartverket inside Norway, OpenStreetMap outside or if Kartverket fails. */
+function setupBase(M, kvLayer){
+  const st = {mode:null, layer:null, kvFailed:false, errs:0, oks:0};
+  const use = mode => {
+    if (st.mode === mode) return;
+    if (st.layer) M.map.removeLayer(st.layer);
+    st.mode = mode;
+    if (mode === 'kv'){
+      st.errs = 0; st.oks = 0;
+      st.layer = L.tileLayer(TILE_KV(kvLayer), {maxZoom:19, maxNativeZoom:18, attribution:KV_ATTR});
+      st.layer.on('tileload', () => { st.oks++; });
+      st.layer.on('tileerror', () => { st.errs++; if (st.errs >= 4 && st.errs > st.oks){ st.kvFailed = true; console.warn('Kartverket svarer ikke, bytter til OpenStreetMap'); use('osm'); } });
+    } else {
+      st.layer = L.tileLayer(TILE_OSM, {maxZoom:19, attribution:OSM_ATTR});
+    }
+    st.layer.addTo(M.map); st.layer.bringToBack();
+  };
+  const pick = () => { const c = M.map.getCenter(); use(!st.kvFailed && inNorway(c.lat, c.lng) ? 'kv' : 'osm'); };
+  M.map.on('moveend', pick);
+  M.pickBase = pick;
+  return st;
+}
 function ensureMap(k){
   if (MAPS[k]) return MAPS[k];
   const el = document.createElement('div'); el.className = 'lmap'; el.style.position = 'absolute';
@@ -1265,10 +1356,10 @@ function ensureMap(k){
   MAPS[k] = M;
   if (!window.L){ el.innerHTML = '<div class="empty">Kartet kunne ikke lastes.</div>'; return M; }
   M.map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:true, zoomSnap:0.25, preferCanvas: k==='wiz'});
-  L.tileLayer(TILE_URL, {maxZoom:19, attribution:TILE_ATTR}).addTo(M.map);
+  M.base = setupBase(M, k==='wiz' ? 'topo' : 'topograatone');
   M.layer = L.layerGroup().addTo(M.map);
   if (k==='wiz'){
-    M.map.setView([60.47, 8.47], 5);
+    M.map.setView([60.47, 8.47], 5); M.pickBase();
     M.map.on('click', e => wizSetCenter(e.latlng.lat, e.latlng.lng, 'valgt punkt'));
   }
   return M;
@@ -1364,8 +1455,9 @@ function closeDraw(){ if (drawAnim){ cancelAnimationFrame(drawAnim); drawAnim=nu
 function openDraw(n, exclude){
   const D = derive(), c = D.contested.find(x=>x.n===n); if (!c) return;
   const off = offSet();
-  let pool = CHALLENGES.filter(x=>!off[x.id] && (c.gs.length<=2 || x.multi));
-  if (!pool.length) pool = CHALLENGES.filter(x=>c.gs.length<=2 || x.multi);
+  const ALL = allChallenges();
+  let pool = ALL.filter(x=>!off[x.id] && (c.gs.length<=2 || x.multi));
+  if (!pool.length) pool = ALL.filter(x=>c.gs.length<=2 || x.multi);
   const choices = pool.length>1 && exclude ? pool.filter(x=>x.id!==exclude) : pool;
   const pick = choices[Math.floor(Math.random()*choices.length)];
   teacherWrite('duels/'+slug(n), {street:n, challenge:pick.id});
@@ -1467,6 +1559,12 @@ document.addEventListener('click', e => {
     case 'w-pick': { const r = ST.wiz.results[+t.dataset.i]; ST.wiz.results=null; wizSetCenter(r.lat, r.lon, r.sub.split(',').slice(0,2).join(',')); if (!ST.wiz.name) ST.wiz.name=''; break; }
     case 'w-refetch': if (ST.wiz?.center) wizFetch(); break;
     case 'w-create': wizCreate(); break;
+    case 'ch-open': ST.chOpen = true; scheduleRender(); setTimeout(()=>$('#ch-t')?.focus(), 50); break;
+    case 'ch-close': ST.chOpen = false; scheduleRender(); break;
+    case 'ch-add': { const d = ST.chDraft || {}; ['t','how','kit','sek'].forEach(k=>{ const el=$('#ch-'+k); if (el) d[k]=el.value; }); const m=$('#ch-multi'); if (m) d.multi=m.checked; if (chAdd(d)){ ST.chDraft = null; ST.chOpen = false; scheduleRender(); } break; }
+    case 'ch-del': { const id = t.dataset.id; teacherWrite('meta/custom/'+id, null); teacherWrite('meta/off/'+id, null); toast('Øvelsen er slettet fra dette spillet.'); break; }
+    case 'ch-lib': { const x = libList()[+t.dataset.i]; if (x) chAdd(x); break; }
+    case 'ch-lib-del': { const lib = libList(); lib.splice(+t.dataset.i, 1); ls(LIB_KEY, lib); scheduleRender(); break; }
     case 'j-cancel': ST.view='landing'; scheduleRender(); break;
     case 'j-group': ST.join.gid = t.dataset.g; ST.join.pin=''; scheduleRender(); break;
     case 'j-regroup': ST.join.gid = null; ST.join.pin=''; scheduleRender(); break;
@@ -1517,6 +1615,7 @@ document.addEventListener('change', e => {
   if (t.id==='t-manual'){ const n = t.value; if (!n) return; const gid = t.dataset.g; const pid = gref('claims/'+gid).push().key; teacherWrite(`claims/${gid}/${pid}`, {s:[n], v:true, m:true, o:'', t:firebase.database.ServerValue.TIMESTAMP}); toast(n+' er lagt til.'); return; }
   if (t.dataset.sel){ const it = ST.local.find(x=>x.id===t.dataset.sel); if (it){ it.sel = t.value; scheduleRender(); } return; }
   if (t.id==='labels'){ ST.labels = t.checked; scheduleRender(); return; }
+  if (t.id==='ch-multi'){ if (ST.chDraft) ST.chDraft.multi = t.checked; return; }
 });
 document.addEventListener('input', e => {
   const t = e.target;
@@ -1525,8 +1624,9 @@ document.addEventListener('input', e => {
   if (t.id==='w-name' && ST.wiz) ST.wiz.name = t.value;
   if (t.classList?.contains('w-gname') && ST.wiz) ST.wiz.names[+t.dataset.i] = t.value;
   if (t.id==='code-in'){ t.value = t.value.toUpperCase(); ST.join.code = t.value; }
+  if (t.id && t.id.startsWith('ch-') && ST.chDraft && t.id!=='ch-multi'){ ST.chDraft[t.id.slice(3)] = t.value; }
 });
-document.addEventListener('focusout', e => { if (e.target.tagName==='INPUT') setTimeout(scheduleRender, 0); });
+document.addEventListener('focusout', e => { if (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA') setTimeout(scheduleRender, 0); });
 document.addEventListener('keydown', e => { if (e.key==='Enter' && e.target.tagName==='INPUT' && e.target.type==='text' && !e.target.closest('form')) e.target.blur(); });
 document.addEventListener('fullscreenchange', () => setTimeout(()=>MAPS.game?.map?.invalidateSize(), 150));
 

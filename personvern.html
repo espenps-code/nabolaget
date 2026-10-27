@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Personvern · Erobre nabolaget</title>
+<meta name="description" content="Personvernerklæring for Erobre nabolaget.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@800;900&display=swap">
+<style>
+:root{color-scheme:light;--bg:#EDF0EC;--surface:#FFFFFF;--ink:#1B2320;--muted:#5A6862;--line:#D3DBD5;--accent:#C4472F;--accent-soft:#F6E1DB;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;--body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme: dark){:root{color-scheme:dark;--bg:#111614;--surface:#1A211E;--ink:#E7ECE9;--muted:#9AA8A1;--line:#2B3531;--accent:#EA6A4E;--accent-soft:#3A221C}}
+*{box-sizing:border-box}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+main{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+.brand{font-family:var(--display);font-weight:900;font-size:22px;text-transform:uppercase;text-decoration:none;color:var(--ink);letter-spacing:.01em}
+.brand span{color:var(--accent)}
+h1{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(34px,6vw,48px);line-height:1;margin:28px 0 8px}
+h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:24px;line-height:1.1;margin:36px 0 8px}
+p,ul{margin:0 0 12px}
+ul{padding-left:22px}
+li{margin-bottom:6px}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin:20px 0}
+.key{background:var(--accent-soft);border-color:transparent}
+.table{width:100%;border-collapse:collapse;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.table th,.table td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+.table th{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.table tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto;margin:12px 0 16px}
+footer{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="./">Erobre <span>nabolaget</span></a>
+  <h1>Personvern&shy;erklæring</h1>
+  <p class="muted">Gjelder fra 19. oktober 2026.</p>
+
+  <div class="box key">
+    <p><b>Kort fortalt</b></p>
+    <ul>
+      <li>Ingen må oppgi navn, e-post eller telefonnummer. Du får en anonym bruker-ID.</li>
+      <li>Vi samler ikke inn GPS-posisjonen din, og spillet følger ikke med på hvor du er.</li>
+      <li>Bilder lagres bare når spillederen må sjekke dem. Da slettes de så snart de er sjekket.</li>
+      <li>Vi har ikke reklame, analyseverktøy eller sporing, og vi selger ingen data.</li>
+    </ul>
+  </div>
+
+  <h2>1. Hvem som er ansvarlig</h2>
+  <p>[NAVN] er behandlingsansvarlig for driften av Erobre nabolaget. Kontakt: <a href="mailto:[E-POST]">[E-POST]</a>.</p>
+  <p>Bruker en skole, et idrettslag, en bedrift eller en annen organisasjon spillet, er det organisasjonen som er behandlingsansvarlig for sin aktivitet. Vi er da databehandler for organisasjonen. Ta kontakt hvis dere trenger en databehandleravtale.</p>
+
+  <h2>2. Hvilke opplysninger vi behandler</h2>
+  <div class="scroll"><table class="table">
+    <thead><tr><th>Opplysning</th><th>Hvorfor</th><th>Hvor lenge</th></tr></thead>
+    <tbody>
+      <tr><td>Anonym bruker-ID for enheten din (fra Firebase)</td><td>For at spilleder og lag bare skal kunne endre sitt eget</td><td>Så lenge spillet finnes</td></tr>
+      <tr><td>Spillets navn, sted og radius, lagnavn, lagfarger, spillkode og gruppekoder</td><td>For å kunne gjennomføre spillet</td><td>Så lenge spillet finnes</td></tr>
+      <tr><td>Hvilke gater laget har funnet, tidspunkt for innsending og når bildet ble tatt</td><td>For å regne poeng og sjekke at bildet ble tatt i spilletiden</td><td>Så lenge spillet finnes</td></tr>
+      <tr><td>Teksten tekstleseren fant på skiltet</td><td>For at spillederen skal kunne sjekke usikre treff</td><td>Så lenge spillet finnes</td></tr>
+      <tr><td>Bilde av skiltet, nedskalert og uten metadata som GPS</td><td>Bare når gata ikke ble gjenkjent sikkert. Spillederen må se bildet for å godkjenne eller avvise</td><td>Slettes automatisk når spillederen har godkjent eller avvist</td></tr>
+      <tr><td>Duellresultater, egne øvelser og bonus- eller strafferpoeng</td><td>For å gjennomføre duellene og vise stillingen</td><td>Så lenge spillet finnes</td></tr>
+    </tbody>
+  </table></div>
+  <p>Bildene leses på din egen enhet. Tekstlesing og tidskontroll skjer i nettleseren din, og hele originalbildet sendes aldri til oss. Når bildet ble tatt, leses fra bildefilen, men GPS-posisjon og annen metadata blir ikke med videre.</p>
+  <p>Vi ber om at lagnavn ikke inneholder fulle navn, og at bilder bare viser skilt. Kommer en person med på et bilde ved et uhell, slettes bildet når spillederen har sjekket det.</p>
+
+  <h2>3. Hvor lenge spillene lagres</h2>
+  <p>Spillederen kan når som helst slette alle bilder eller hele spillet under <b>Oppsett → Rydd opp</b>. Spill som ikke er slettet, sletter vi senest 12 måneder etter at de ble laget.</p>
+
+  <h2>4. Grunnlaget for behandlingen</h2>
+  <p>Vi behandler opplysningene fordi de trengs for å levere spillet du har valgt å bruke. Grunnlaget er berettiget interesse etter personvernforordningen artikkel 6 nr. 1 bokstav f. Når en skole eller en annen organisasjon bruker spillet, bruker organisasjonen sitt eget behandlingsgrunnlag.</p>
+
+  <h2>5. Hva som lagres på enheten din</h2>
+  <p>Spillet bruker ikke informasjonskapsler (cookies) til sporing eller reklame. Nettleseren lagrer bare det som trengs for at spillet skal virke:</p>
+  <ul>
+    <li>den anonyme innloggingen, slik at du kommer tilbake til laget ditt</li>
+    <li>for spillederen: spill du har laget på maskinen, og egne øvelser du har laget</li>
+    <li>hvilken fane du sist hadde åpen</li>
+  </ul>
+  <p>Du kan slette dette når som helst ved å tømme nettstedsdata i nettleseren.</p>
+
+  <h2>6. Tjenester vi bruker</h2>
+  <p>For at spillet skal virke, henter nettleseren din innhold fra disse tjenestene. Da ser de IP-adressen din, slik alle nettsteder gjør:</p>
+  <ul>
+    <li><b>Google Firebase</b> (Google Ireland): lagrer spilldataene. Databasen ligger i EU (Belgia). Google er vår databehandler.</li>
+    <li><b>GitHub Pages</b> (GitHub, USA): leverer selve nettsiden.</li>
+    <li><b>Kartverket</b>: bakgrunnskart i Norge.</li>
+    <li><b>OpenStreetMap</b>: bakgrunnskart utenfor Norge, og stedssøk (Nominatim) når spillederen lager et spill.</li>
+    <li><b>Overpass-servere</b> (overpass-api.de i Tyskland, overpass.private.coffee og overpass.kumi.systems): henter gatene i området når spillet lages. Bare kartutsnittet sendes, ingen opplysninger om deltakerne.</li>
+    <li><b>Innholdsnettverk</b>: cdnjs (Cloudflare), jsDelivr og Google Fonts leverer kode, tekstleseren og skrifttyper.</li>
+  </ul>
+  <p>Noen av tjenestene kan behandle data utenfor EU/EØS. Overføring til USA skjer med grunnlag i EUs rammeverk for personvern mellom EU og USA (Data Privacy Framework) eller EUs standard personvernbestemmelser.</p>
+
+  <h2>7. Barn og unge</h2>
+  <p>Spillet er laget slik at barn kan delta uten å oppgi personopplysninger. Når barn deltar, er det skolen, organisasjonen eller den voksne spillederen som har ansvaret for aktiviteten og for å informere foresatte ved behov.</p>
+
+  <h2>8. Rettighetene dine</h2>
+  <p>Du har rett til å be om innsyn i, retting av og sletting av opplysninger om deg, og til å protestere mot behandlingen. Siden vi ikke vet hvem deltakerne er, er det ofte enklest at spillederen sletter spillet. Ellers kan du kontakte oss på <a href="mailto:[E-POST]">[E-POST]</a>. Oppgi spillkoden, så finner vi riktig spill.</p>
+  <p>Mener du at vi behandler opplysninger i strid med regelverket, kan du klage til <a href="https://www.datatilsynet.no/">Datatilsynet</a>.</p>
+
+  <h2>9. Endringer</h2>
+  <p>Endrer vi hvordan vi behandler opplysninger, oppdaterer vi denne siden og datoen øverst.</p>
+</main>
+<footer><a href="./">Til spillet</a> · <a href="vilkar.html">Brukervilkår</a></footer>
+</body>
+</html>
