@@ -275,7 +275,7 @@ footer a{color:inherit}
 <body>
 <header class="top" id="top"></header>
 <main id="main"><p class="muted">Laster …</p></main>
-<footer><a href="vilkar.html">Brukervilkår</a> · <a href="personvern.html">Personvern</a> · Gatedata © OpenStreetMap-bidragsytere (ODbL). Bakgrunnskart © Kartverket og OpenStreetMap.</footer>
+<footer><a href="vilkar.html">Brukervilkår</a> · <a href="personvern.html">Personvern</a> · Gatedata © Statens vegvesen (NLOD) og OpenStreetMap-bidragsytere (ODbL). Bakgrunnskart © Kartverket og OpenStreetMap.</footer>
 <div class="toast" id="toast" hidden></div>
 <div class="stage" id="stage" hidden role="dialog" aria-modal="true" aria-label="Duell"></div>
 <input type="file" id="s-files" accept="image/*" multiple hidden>
@@ -294,6 +294,9 @@ footer a{color:inherit}
 const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 const OVERPASS_STAGGER = 5000, OVERPASS_TOTAL = 45000;
+// Statens vegvesen, Nasjonal vegdatabank (NVDB). Offisielle gatenavn fra adresseregisteret. Bare Norge.
+const NVDB = 'https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/veglenkesekvenser/segmentert';
+const NVDB_SKIP = new Set(['Gang- og sykkelveg','Gangveg','Sykkelveg','Fortau','Gangfelt','Trapp','Bilferje','Passasjerferje','Annet']);
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const FETCH_MARGIN = 150;     // m extra around the chosen radius when downloading streets
 const MIN_LEN = 15;           // m inside the area before a street counts
@@ -687,12 +690,12 @@ function wizArea(){
 function viewCreate(){
   const W = ST.wiz, A = wizArea();
   return `
-  <div class="intro"><h2>Lag et nytt spill</h2><p>Finn startstedet på kartet, velg hvor stort området skal være, og lag gruppene. Gatene hentes fra OpenStreetMap.</p></div>
+  <div class="intro"><h2>Lag et nytt spill</h2><p>Finn startstedet på kartet, velg hvor stort området skal være, og lag gruppene. I Norge hentes gatene fra Statens vegvesen, ellers fra OpenStreetMap.</p></div>
   <div class="grid-2">
     <div class="stack">
       <div class="card stack">
         <label class="label" for="w-name">Navn på spillet</label>
-        <input type="text" id="w-name" placeholder="For eksempel 7A høst" value="${esc(W.name)}" maxlength="40">
+        <input type="text" id="w-name" placeholder="For eksempel Høstløpet" value="${esc(W.name)}" maxlength="40">
       </div>
       <div class="card stack">
         <div class="label">Startsted</div>
@@ -759,10 +762,54 @@ async function wizFetch(){
     const P = projector(my.lat, my.lon);
     for (const w of els) w.xy = w.ll.flatMap(([la,lo]) => P.xy(la,lo));
     W.raw = els; W.fetchedR = R; W._cache = null;
-  } catch(e){ if (ST.wiz===W && W.center===my) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå.'; }
+  } catch(e){ if (ST.wiz===W && W.center===my) W.err = e.name==='AbortError' ? 'Kartserveren brukte for lang tid. Prøv igjen, eller velg mindre radius.' : 'Kunne ikke hente gater akkurat nå. Prøv igjen om litt.'; }
   if (ST.wiz===W && W.center===my){ W.fetching = false; scheduleRender(); if (!W.err) wizMaybeRefetch(); }
 }
 async function fetchStreets(lat, lon, R){
+  // Norge: NVDB først (raskt og stabilt). Utenfor Norge, eller hvis NVDB feiler: OpenStreetMap via Overpass.
+  if (inNorway(lat, lon)){
+    try {
+      const out = await fetchNvdb(lat, lon, R);
+      if (out.length) return out;
+    } catch(e){ console.warn('NVDB feilet, prøver OpenStreetMap', e); }
+  }
+  return fetchOverpass(lat, lon, R);
+}
+async function fetchNvdb(lat, lon, R){
+  const dLat = R/110540, dLon = R/(111320*Math.cos(lat*Math.PI/180));
+  const bb = [lon-dLon, lat-dLat, lon+dLon, lat+dLat].map(x=>x.toFixed(6)).join(',');
+  const base = `${NVDB}?kartutsnitt=${bb}&srid=4326&antall=1000&veglenketype=hoved&detaljniva=vt,vtkb`;
+  const out = [], t0 = Date.now();
+  let url = base;
+  for (let page=0; page<25 && url; page++){
+    if (Date.now()-t0 > 40000) throw new Error('NVDB brukte for lang tid');
+    const ac = new AbortController(), to = setTimeout(()=>ac.abort(), 20000);
+    let js;
+    try {
+      const r = await fetch(url, {headers:{'X-Client':'erobre-nabolaget', 'Accept':'application/json'}, signal:ac.signal});
+      if (!r.ok) throw new Error('NVDB HTTP '+r.status);
+      js = await r.json();
+    } finally { clearTimeout(to); }
+    for (const o of (js.objekter||[])){
+      const n = o.adresse?.navn;
+      if (!n || o.adresse?.sideveg) continue;          // sideveger er avkjørsler som låner gatenavnet
+      if (NVDB_SKIP.has(o.typeVeg)) continue;           // gang- og sykkelveger følger ofte gata og ville telt dobbelt
+      const wkt = o.geometri?.wkt || '';
+      for (const part of wkt.replace(/^[A-Z ]+/,'').split(/\)\s*,\s*\(/)){
+        const ll = [];
+        for (const pt of part.replace(/[()]/g,'').split(',')){
+          const [a,b] = pt.trim().split(/\s+/).map(Number);   // srid 4326 i NVDB gir «breddegrad lengdegrad»
+          if (isFinite(a) && isFinite(b)) ll.push([a,b]);
+        }
+        if (ll.length > 1) out.push({n:n.trim(), ll});
+      }
+    }
+    const m = js.metadata || {};
+    url = (m.returnert >= 1000 && m.neste?.start) ? `${base}&start=${encodeURIComponent(m.neste.start)}` : null;
+  }
+  return out;
+}
+async function fetchOverpass(lat, lon, R){
   const dLat = R/110540, dLon = R/(111320*Math.cos(lat*Math.PI/180));
   const bb = [lat-dLat, lon-dLon, lat+dLat, lon+dLon].map(x=>x.toFixed(6)).join(',');
   const types = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|pedestrian|road|service|track|cycleway|path';
@@ -1325,8 +1372,9 @@ const TILE_OSM = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsytere';
 const TILE_KV = layer => `https://cache.kartverket.no/v1/wmts/1.0.0/${layer}/default/webmercator/{z}/{y}/{x}.png`;
 const KV_ATTR = '© <a href="https://www.kartverket.no/">Kartverket</a> · gater © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-// rough box around mainland Norway (Kartverket returns blank tiles outside it)
-const inNorway = (lat, lon) => lat > 57.7 && lat < 71.4 && lon > 4.0 && lon < 31.3;
+// omtrentlig omriss av fastlands-Norge (Kartverket gir blanke kartruter utenfor)
+const NO_POLY = [[3.5,57.9],[7.2,57.9],[10.5,58.75],[11.3,59.05],[11.75,59.1],[11.85,59.5],[12.05,59.9],[12.5,60.1],[12.65,60.5],[12.7,61.0],[12.3,61.6],[12.15,62.0],[12.15,62.6],[12.05,63.3],[12.2,63.7],[13.9,64.5],[14.2,65.2],[14.5,65.7],[15.4,66.3],[16.3,67.0],[16.6,67.5],[17.9,68.1],[18.05,68.47],[19.9,68.35],[20.55,69.06],[21.3,69.3],[22.4,68.75],[23.5,68.75],[24.7,68.65],[25.75,69.35],[26.5,69.95],[27.3,70.05],[28.0,70.05],[28.4,69.8],[29.1,69.6],[28.95,69.05],[29.3,69.3],[30.0,69.4],[30.85,69.8],[31.5,70.2],[31.5,71.5],[3.5,71.5]];
+const inNorway = (lat, lon) => { let c=false; for (let i=0,j=NO_POLY.length-1;i<NO_POLY.length;j=i++){ const [xi,yi]=NO_POLY[i],[xj,yj]=NO_POLY[j]; if ((yi>lat)!==(yj>lat) && lon < (xj-xi)*(lat-yi)/(yj-yi)+xi) c=!c; } return c; };
 /* Base map: Kartverket inside Norway, OpenStreetMap outside or if Kartverket fails. */
 function setupBase(M, kvLayer){
   const st = {mode:null, layer:null, kvFailed:false, errs:0, oks:0};

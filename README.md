@@ -2,7 +2,7 @@
 
 Et utendørsspill for skoleklasser, idrettslag, speidere, jobben og vennegjengen. Lagene løper rundt og tar bilde av gatenavnskilt. Gater bare ett lag har funnet, blir erobret med en gang. Gater som flere lag har funnet, avgjøres i en kort duell når dere er samlet igjen. Laget med flest meter erobret gate vinner.
 
-Nettsiden er statisk (GitHub Pages) og bruker Firebase Realtime Database til å dele data mellom spillederens maskin og deltakernes mobiler eller nettbrett. Hvem som helst kan lage spill i sitt eget nabolag. Gatene hentes fra OpenStreetMap.
+Nettsiden er statisk (GitHub Pages) og bruker Firebase Realtime Database til å dele data mellom spillederens maskin og deltakernes mobiler eller nettbrett. Hvem som helst kan lage spill i sitt eget nabolag. I Norge hentes gatene fra Statens vegvesen, ellers fra OpenStreetMap.
 
 ## Slik spilles det
 
@@ -57,10 +57,10 @@ Realtime Database gir 1 GB lagring og 10 GB nedlasting per måned. Ett spill med
 ## Teknisk
 
 - Én fil: `index.html`. Leaflet, qrcode-generator, Firebase (compat 10.12.2) og Tesseract.js lastes fra CDN.
-- Gater: Overpass API (`highway` med `name` innenfor 2,1 km). Gangveger av typen `footway`, tunneler og navn på bruer tas ikke med. Gatene klippes mot sirkelen, og lengden regnes bare for delen som ligger innenfor.
 - Bakgrunnskart: Kartverkets topografiske norgeskart (`cache.kartverket.no`, fargekart i oppsettet og gråtonekart i spillet). Utenfor Norge, eller hvis Kartverket ikke svarer, brukes OpenStreetMap-fliser automatisk.
-- Gatene hentes bare én gang, når spillet lages, og lagres i Firebase. På selve spilldagen trengs ikke Overpass.
-- Overpass: tre servere prøves med fem sekunders mellomrom, og det første gode svaret brukes. Etter 45 sekunder gir spillet opp og viser en knapp for å prøve igjen.
+- Gater i Norge: Statens vegvesens vegdatabase (NVDB, API Les v4, `nvdbapiles.atlas.vegvesen.no`). Gatenavnene kommer fra adresseregisteret. Avkjørsler som låner gatenavnet (`sideveg`), og gang- og sykkelveger som følger gata, tas ikke med. Lisens: NLOD.
+- Gater utenfor Norge, eller hvis NVDB ikke svarer: OpenStreetMap via Overpass. Tre servere prøves med fem sekunders mellomrom. Etter 45 sekunder gir spillet opp og viser en knapp for å prøve igjen.
+- Gatene hentes bare én gang, når spillet lages, og lagres i Firebase. På selve spilldagen trengs verken NVDB eller Overpass. Gatene klippes mot sirkelen, og lengden regnes bare for delen som ligger innenfor.
 - Datamodell: `games/{kode}/meta | groups | streets | claims/{gruppe}/{id} | imgs/{gruppe}/{id} | verdicts | duels | secret | teachers | members`.
 
 ### Testing lokalt med Firebase-emulator
